@@ -1,0 +1,41 @@
+<section>
+  <h2>Métodos de pago</h2>
+  <div class="grid">
+    <div class="lista">
+      <h3>Guardados</h3>
+      <div *ngIf="items.length; else empty">
+        <article class="item" *ngFor="let m of items">
+          <div class="info">
+            <strong>{{ m.etiqueta }}</strong>
+            <span class="muted">{{ m.tipo }} · {{ m.brand }} {{ m.last4 ? ('•••• ' + m.last4) : '' }}</span>
+          </div>
+          <div class="acciones">
+            <button class="btn ghost" (click)="setDefault(m.id)" [disabled]="m.default">Predeterminar</button>
+            <button class="btn danger" (click)="remove(m.id)">Eliminar</button>
+          </div>
+          <span class="badge" *ngIf="m.default">Predeterminado</span>
+        </article>
+      </div>
+      <ng-template #empty>
+        <p class="muted">No tienes métodos guardados.</p>
+      </ng-template>
+    </div>
+
+    <aside class="form-box">
+      <h3>Añadir método</h3>
+      <form [formGroup]="form" (ngSubmit)="add()" class="form">
+        <label>Tipo
+          <select formControlName="tipo">
+            <option value="tarjeta">Tarjeta</option>
+            <option value="paypal">PayPal</option>
+            <option value="transferencia">Transferencia</option>
+          </select>
+        </label>
+        <label>Etiqueta<input formControlName="etiqueta" placeholder="p.ej. Visa Personal"/></label>
+        <label>Marca<input formControlName="brand" placeholder="Visa/Mastercard"/></label>
+        <label>Últimos 4<input formControlName="last4" maxlength="4"/></label>
+        <button type="submit" class="btn primary" [disabled]="form.invalid">Guardar</button>
+      </form>
+    </aside>
+  </div>
+</section>

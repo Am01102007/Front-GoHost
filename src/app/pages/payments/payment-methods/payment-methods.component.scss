@@ -1,0 +1,14 @@
+h2{margin-bottom:8px}
+.muted{color:#6b7280}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+.lista{display:grid;gap:10px}
+.item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;position:relative}
+.acciones{display:flex;gap:8px}
+.badge{position:absolute;top:8px;right:8px;background:#dcfce7;color:#065f46;border:1px solid #86efac;border-radius:999px;padding:4px 8px;font-size:12px}
+.form-box{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.form{display:grid;gap:10px}
+.form input,.form select{border:1px solid #d1d5db;border-radius:10px;padding:10px}
+.btn{border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:#9b59b6;color:#fff}
+.btn.ghost{background:#fff;color:#9b59b6;border:2px solid #9b59b6}
+.btn.danger{background:#fee2e2;color:#7f1d1d}

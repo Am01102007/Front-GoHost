@@ -1,0 +1,65 @@
+<section class="booking-history">
+  <div class="header">
+    <h1>Historial de Estadías</h1>
+    <p>Revisa todas tus estadías pasadas y futuras</p>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn" [class.active]="filter === 'todas'" (click)="filter = 'todas'">
+      Todas
+    </button>
+    <button class="filter-btn" [class.active]="filter === 'completadas'" (click)="filter = 'completadas'">
+      Completadas
+    </button>
+    <button class="filter-btn" [class.active]="filter === 'proximas'" (click)="filter = 'proximas'">
+      Próximas
+    </button>
+  </div>
+
+  <div class="bookings-grid" *ngIf="filteredBookings.length > 0; else emptyState">
+    <div class="booking-card" *ngFor="let booking of filteredBookings">
+      <div class="booking-image">
+        <img [src]="booking.listing?.imagenes?.[0] || 'https://picsum.photos/300/200'" 
+             [alt]="booking.listing?.titulo || 'Alojamiento'">
+        <div class="status-badge" [ngClass]="booking.estado">
+          {{ getStatusText(booking.estado) }}
+        </div>
+      </div>
+      
+      <div class="booking-info">
+        <h3>{{ booking.listing?.titulo || 'Alojamiento' }}</h3>
+        <p class="location">{{ booking.listing?.ubicacion || 'Ubicación no disponible' }}</p>
+        
+        <div class="dates">
+          <span class="date-range">
+            {{ formatDate(booking.fechaInicio) }} - {{ formatDate(booking.fechaFin) }}
+          </span>
+          <span class="duration">{{ getDuration(booking.fechaInicio, booking.fechaFin) }} noches</span>
+        </div>
+        
+        <div class="booking-details">
+          <span class="guests">{{ booking.huespedes }} huéspedes</span>
+          <span class="total">${{ booking.total }}</span>
+        </div>
+        
+        <div class="actions">
+          <button class="btn-secondary" [routerLink]="['/alojamientos', booking.listingId]">
+            Ver detalles
+          </button>
+          <button class="btn-primary" *ngIf="canWriteReview(booking)" (click)="writeReview(booking.id)">
+            Escribir reseña
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-icon">🏠</div>
+      <h3>No tienes estadías {{ filter === 'todas' ? '' : filter }}</h3>
+      <p>Cuando realices reservas, aparecerán aquí</p>
+      <button class="btn-primary" routerLink="/">Explorar alojamientos</button>
+    </div>
+  </ng-template>
+</section>

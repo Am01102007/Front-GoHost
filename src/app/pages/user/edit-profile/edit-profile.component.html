@@ -1,0 +1,56 @@
+<h2>Actualizar mis datos</h2>
+<form [formGroup]="form" (ngSubmit)="save()" class="perfil-grid">
+  <section class="bloque">
+    <h3>Nombre</h3>
+    <div class="campos">
+      <label>Nombre<input formControlName="nombre" placeholder="Nombre"/></label>
+      <label>Apellido<input formControlName="apellido" placeholder="Apellido"/></label>
+      <label>Correo<input type="email" formControlName="email" placeholder="Correo"/></label>
+    </div>
+    <h3>Teléfono</h3>
+    <div class="campos">
+      <label>Código<input formControlName="telefonoCodigo" placeholder="Código"/></label>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <h3>Cambiar contraseña</h3>
+    <div class="campos">
+      <label>Contraseña Actual<input type="password" formControlName="passwordActual" placeholder="Contraseña Actual"/></label>
+      <label>Contraseña Nueva<input type="password" formControlName="passwordNueva" placeholder="Contraseña Nueva"/></label>
+    </div>
+    <button type="button" class="btn ghost" (click)="cambiarContrasena()">Cambiar contraseña</button>
+  </section>
+
+  <section class="bloque">
+    <h3>Descripción personal</h3>
+    <label>
+      <textarea rows="4" formControlName="descripcion" placeholder="Descripción"></textarea>
+    </label>
+
+    <h3>Documentos legales</h3>
+    <label class="file">
+      <input type="file" (change)="onSubirDocumentos($event)" multiple />
+      <span>Subir archivos +</span>
+    </label>
+    <ul class="lista-archivos">
+      <li *ngFor="let d of documentos">{{ d }}</li>
+    </ul>
+  </section>
+
+  <section class="bloque foto">
+    <h3>Foto de perfil</h3>
+    <div class="avatar">
+      <img src="https://static-00.iconduck.com/assets.00/user-avatar-azul-illustration-512x512-1m2e1d97.png" alt="avatar"/>
+    </div>
+    <label class="btn" >
+      <input type="file" accept="image/*" (change)="onSubirFoto($event)" />
+      Subir foto de perfil
+    </label>
+    <p class="hint" *ngIf="fotoPerfilNombre">Seleccionado: {{ fotoPerfilNombre }}</p>
+  </section>
+
+  <div class="guardar-row">
+    <button type="submit" class="btn primary ancho">Guardar cambios</button>
+  </div>
+</form>

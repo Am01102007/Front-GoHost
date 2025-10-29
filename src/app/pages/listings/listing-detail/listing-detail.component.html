@@ -1,0 +1,141 @@
+<section class="listing-detail" *ngIf="listing; else notFound">
+  <!-- Header -->
+  <div class="header">
+    <div class="title-section">
+      <h1>{{ listing.titulo }}</h1>
+      <div class="location">
+        <img src="/icons/location.svg" alt="Ubicación" width="16" height="16">
+        <span>{{ listing.ubicacion.direccion }}, {{ listing.ubicacion.ciudad }}, {{ listing.ubicacion.pais }}</span>
+      </div>
+      <div class="rating-section">
+        <div class="stars">
+          <span *ngFor="let s of [1,2,3,4,5]" class="star" [class.filled]="s <= round(listing.calificacionPromedio || 0)">★</span>
+        </div>
+        <span class="rating-text">{{ listing.calificacionPromedio || 0 }} ({{ listing.numeroResenas || 0 }} reseñas)</span>
+      </div>
+    </div>
+    <div class="price-section">
+      <span class="price">${{ listing.precioPorNoche }}</span>
+      <span class="period">por noche</span>
+    </div>
+  </div>
+
+  <!-- Image Gallery -->
+  <div class="gallery">
+    <div class="main-image">
+      <img [src]="listing.imagenes?.[0] || 'https://picsum.photos/600/400'" [alt]="listing.titulo" />
+    </div>
+    <div class="thumbnail-grid" *ngIf="listing.imagenes && listing.imagenes.length > 1">
+      <img *ngFor="let img of listing.imagenes.slice(1, 5)" [src]="img" [alt]="listing.titulo" />
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+    <!-- Left Column -->
+    <div class="main-content">
+      <!-- Host Info -->
+      <div class="host-section">
+        <div class="host-info">
+          <div class="host-avatar">
+            <img src="/icons/user.svg" alt="Anfitrión" width="40" height="40">
+          </div>
+          <div>
+            <h3>Anfitrión: {{ listing.anfitrionNombre || 'Usuario' }}</h3>
+            <p>Miembro desde 2023</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="description-section">
+        <h3>Acerca de este lugar</h3>
+        <p>{{ listing.descripcion || 'Hermoso alojamiento en una ubicación privilegiada. Perfecto para relajarse y disfrutar de una experiencia única.' }}</p>
+      </div>
+
+      <!-- Amenities -->
+      <div class="amenities-section">
+        <h3>Lo que ofrece este lugar</h3>
+        <div class="amenities-grid">
+          <div class="amenity-item">
+            <img src="/icons/wifi.svg" alt="WiFi" width="24" height="24">
+            <span>WiFi gratuito</span>
+          </div>
+          <div class="amenity-item">
+            <img src="/icons/parking.svg" alt="Estacionamiento" width="24" height="24">
+            <span>Estacionamiento</span>
+          </div>
+          <div class="amenity-item">
+            <img src="/icons/kitchen.svg" alt="Cocina" width="24" height="24">
+            <span>Cocina equipada</span>
+          </div>
+          <div class="amenity-item">
+            <img src="/icons/air-conditioning.svg" alt="Aire acondicionado" width="24" height="24">
+            <span>Aire acondicionado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-section">
+        <h3>Ubicación</h3>
+        <div id="map" class="map"></div>
+      </div>
+
+      <!-- Reviews -->
+      <div class="reviews-section">
+        <h3>Reseñas</h3>
+        <app-comments-section [listingId]="listing.id"></app-comments-section>
+      </div>
+    </div>
+
+    <!-- Right Column - Booking Card -->
+    <div class="booking-sidebar">
+      <div class="booking-card">
+        <div class="booking-header">
+          <span class="booking-price">${{ listing.precioPorNoche }}</span>
+          <span class="booking-period">por noche</span>
+        </div>
+        
+        <div class="booking-form">
+          <div class="date-inputs">
+            <div class="input-group">
+              <label>Check-in</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="input-group">
+              <label>Check-out</label>
+              <input type="date" class="form-control">
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label>Huéspedes</label>
+            <select class="form-control">
+              <option value="1">1 huésped</option>
+              <option value="2">2 huéspedes</option>
+              <option value="3">3 huéspedes</option>
+              <option value="4">4 huéspedes</option>
+            </select>
+          </div>
+          
+          <button class="btn-reserve" [routerLink]="['/checkout']">
+            Reservar ahora
+          </button>
+          
+          <p class="booking-note">No se te cobrará todavía</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #notFound>
+  <div class="not-found">
+    <div class="not-found-content">
+      <h2>Alojamiento no encontrado</h2>
+      <p>Lo sentimos, el alojamiento que buscas no existe o ha sido eliminado.</p>
+      <button class="btn-primary" routerLink="/">Volver al inicio</button>
+    </div>
+  </div>
+</ng-template>

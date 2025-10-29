@@ -1,0 +1,53 @@
+<section>
+  <h2>Mis reservas</h2>
+  <div class="tabs">
+    <button class="tab" [class.active]="tab==='activas'" (click)="tab='activas'">Activas</button>
+    <button class="tab" [class.active]="tab==='canceladas'" (click)="tab='canceladas'">Canceladas</button>
+  </div>
+
+  <div *ngIf="items.length; else empty">
+    <div class="grid" *ngIf="tab==='activas'">
+      <article class="card" *ngFor="let r of activas">
+        <a [routerLink]="['/alojamientos', r.listingId]">
+          <img [src]="r.listing?.imagenes?.[0] || 'https://via.placeholder.com/640x360?text=Imagen'" alt="imagen" />
+        </a>
+        <div class="info">
+          <div class="top">
+            <h3>{{ r.listing?.titulo || r.listingId }}</h3>
+            <span class="badge" [class.pendiente]="r.estado==='pendiente'" [class.pagado]="r.estado==='pagado'">{{ r.estado }}</span>
+          </div>
+          <p class="rango">{{ r.fechaInicio }} — {{ r.fechaFin }}</p>
+          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: ${{ r.total }}</p>
+          <div class="actions">
+            <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
+            <button class="btn pagar" (click)="pagar(r.id)" [disabled]="r.estado==='pagado'">Pagar ahora</button>
+            <button class="btn cancelar" (click)="cancelar(r.id)">Cancelar</button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="grid" *ngIf="tab==='canceladas'">
+      <article class="card" *ngFor="let r of canceladas">
+        <a [routerLink]="['/alojamientos', r.listingId]">
+          <img [src]="r.listing?.imagenes?.[0] || 'https://via.placeholder.com/640x360?text=Imagen'" alt="imagen" />
+        </a>
+        <div class="info">
+          <div class="top">
+            <h3>{{ r.listing?.titulo || r.listingId }}</h3>
+            <span class="badge cancelado">cancelado</span>
+          </div>
+          <p class="rango">{{ r.fechaInicio }} — {{ r.fechaFin }}</p>
+          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: ${{ r.total }}</p>
+          <div class="actions">
+            <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <p>No tienes reservas aún.</p>
+  </ng-template>
+</section>

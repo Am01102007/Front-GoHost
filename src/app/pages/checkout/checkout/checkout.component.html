@@ -1,0 +1,27 @@
+<h2>Confirmar y paga</h2>
+<div class="checkout-grid">
+  <form [formGroup]="form" class="form">
+    <h3>Datos de la reserva</h3>
+    <label>ID alojamiento<input formControlName="listingId" placeholder="ej: a1"/></label>
+    <label>Fecha inicio<input type="date" formControlName="fechaInicio" /></label>
+    <label>Fecha fin<input type="date" formControlName="fechaFin" /></label>
+    <label>Huéspedes<input type="number" formControlName="huespedes" /></label>
+  </form>
+
+  <aside class="pago">
+    <h3>Elige un método de pago</h3>
+    <label>
+      <select formControlName="metodoPago">
+        <option value="tarjeta">Tarjeta</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="paypal">PayPal</option>
+      </select>
+    </label>
+    <div class="acciones">
+      <button class="btn primary" (click)="reservarPagado()" [disabled]="form.invalid">Pagar reserva ahora</button>
+      <button class="btn ghost" (click)="reservarPendiente()" [disabled]="form.invalid">Pagar luego</button>
+      <button class="btn danger" (click)="cancelar()">Cancelar</button>
+    </div>
+    <p class="hint">Ingresa el ID del alojamiento (ej: a1, a2).</p>
+  </aside>
+</div>

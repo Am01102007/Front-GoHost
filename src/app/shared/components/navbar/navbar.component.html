@@ -1,0 +1,53 @@
+<nav>
+  <a routerLink="/" class="brand">
+    <img src="/icons/logo.svg" alt="GoHost" class="brand-logo">
+    <span class="brand-text">GoHost</span>
+  </a>
+  
+  <!-- Mobile menu button -->
+  <button class="mobile-menu-btn" (click)="toggleMobileMenu()" [class.active]="isMobileMenuOpen">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  
+  <!-- Navigation links -->
+  <div class="nav-container" [class.mobile-open]="isMobileMenuOpen">
+    <ul class="nav-links">
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">Dashboard</a></li>
+      
+      @if (auth.isLoggedIn()) {
+        @if (currentUser()?.rol === 'huesped') {
+          <!-- Navegación para huéspedes -->
+          <li><a routerLink="/mis-reservas" routerLinkActive="active" (click)="closeMobileMenu()">Mis Reservas</a></li>
+          <li><a routerLink="/historial-de-estadias" routerLinkActive="active" (click)="closeMobileMenu()">Historial</a></li>
+          <li><a routerLink="/favoritos" routerLinkActive="active" (click)="closeMobileMenu()">Favoritos</a></li>
+        } @else if (currentUser()?.rol === 'anfitrion') {
+          <!-- Navegación para anfitriones -->
+          <li><a routerLink="/mis-alojamientos" routerLinkActive="active" (click)="closeMobileMenu()">Mis Alojamientos</a></li>
+          <li><a routerLink="/crear-alojamiento" routerLinkActive="active" (click)="closeMobileMenu()">Crear Alojamiento</a></li>
+          <li><a routerLink="/solicitudes-de-alojamientos" routerLinkActive="active" (click)="closeMobileMenu()">Solicitudes</a></li>
+          <li><a routerLink="/mis-mensajes" routerLinkActive="active" (click)="closeMobileMenu()">Mensajes</a></li>
+        }
+        <li><a routerLink="/perfil" routerLinkActive="active" (click)="closeMobileMenu()">Mi Perfil</a></li>
+      }
+    </ul>
+    
+    <div class="auth-section">
+      @if (auth.isLoggedIn()) {
+        <div class="user-info">
+          <span class="role-badge" [class]="currentUser()?.rol">
+            {{ currentUser()?.rol === 'anfitrion' ? 'Anfitrión' : 'Huésped' }}
+          </span>
+          <span class="user-name">{{ currentUser()?.nombre }}</span>
+        </div>
+        <button class="logout-btn" (click)="auth.logout(); closeMobileMenu()">Salir</button>
+      } @else {
+        <div class="auth-links">
+          <a routerLink="/login" (click)="closeMobileMenu()">Entrar</a>
+          <a routerLink="/registro" (click)="closeMobileMenu()">Registro</a>
+        </div>
+      }
+    </div>
+  </div>
+</nav>

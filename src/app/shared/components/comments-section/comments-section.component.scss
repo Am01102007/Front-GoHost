@@ -1,0 +1,19 @@
+.pill{border:2px solid #9b59b6;color:#9b59b6;background:#fff;border-radius:22px;padding:8px 16px;cursor:pointer;font-weight:600}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;z-index:50}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+.modal{position:relative;z-index:51;background:#fff;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.12);width:min(720px,90vw);padding:16px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:12px}
+.close{border:none;background:transparent;font-size:22px;cursor:pointer;color:#6b7280}
+.list{display:grid;gap:12px;margin-bottom:12px;max-height:40vh;overflow:auto}
+.comment{border:1px solid #eee;border-radius:10px;padding:10px;background:#fafafa}
+.comment .meta{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:12px}
+.comment .user{font-weight:600;color:#111827}
+.stars .star{color:#d1d5db;margin-right:2px}
+.stars .star.on{color:#f59e0b}
+.text{margin-top:6px;color:#111827}
+.form{display:grid;gap:10px}
+.form select,.form textarea{border:1px solid #d1d5db;border-radius:8px;padding:8px;width:100%}
+.actions{display:flex;gap:8px;justify-content:flex-end}
+.primary{background:#9b59b6;color:#fff;border:none;border-radius:8px;padding:10px 14px;cursor:pointer}
+.ghost{background:#fff;color:#9b59b6;border:2px solid #9b59b6;border-radius:8px;padding:8px 14px;cursor:pointer}
+

@@ -1,0 +1,12 @@
+.solicitud{display:grid;grid-template-columns:84px 1fr 1fr;gap:16px;padding:16px;margin:10px 0;border:2px solid var(--color-primary-200);border-radius:12px;background:#fff}
+.thumb img{width:84px;height:84px;object-fit:cover;border-radius:10px;display:block}
+.datos h3{margin:0 0 8px;font-weight:700;color:#111827}
+.acciones{display:flex;gap:10px}
+.btn{border:none;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer}
+.btn.aceptar{background:var(--color-primary);color:#fff}
+.btn.rechazar{background:#fee2ff;color:#7c3aed;border:2px solid #f5d0fe}
+.detalles{color:#374151}
+.meta{color:#6b7280;margin-top:4px}
+.empty{color:#6b7280}
+h2{margin:10px 0 16px}
+

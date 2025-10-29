@@ -1,0 +1,83 @@
+<div class="host-dashboard">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Panel de Anfitrión</h1>
+      <p>Gestiona tus alojamientos y reservas</p>
+    </div>
+    <a routerLink="/crear-alojamiento" class="btn-primary">
+      <img src="/icons/plus.svg" alt="Crear" width="20" height="20">
+      Crear Alojamiento
+    </a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="/icons/home.svg" alt="Alojamientos" width="24" height="24">
+      </div>
+      <div class="stat-content">
+        <h3>{{ mine.length }}</h3>
+        <p>Alojamientos Activos</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="/icons/users.svg" alt="Reservas" width="24" height="24">
+      </div>
+      <div class="stat-content">
+        <h3>{{ totalBookings }}</h3>
+        <p>Reservas Totales</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="/icons/dollar.svg" alt="Ingresos" width="24" height="24">
+      </div>
+      <div class="stat-content">
+        <h3>${{ totalEarnings }}</h3>
+        <p>Ingresos Totales</p>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="/icons/star.svg" alt="Calificación" width="24" height="24">
+      </div>
+      <div class="stat-content">
+        <h3>{{ averageRating.toFixed(1) }}</h3>
+        <p>Calificación Promedio</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="listings-section">
+    <div class="section-header">
+      <h2>Mis Alojamientos</h2>
+      <div class="view-options">
+        <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+          <img src="/icons/grid.svg" alt="Vista de cuadrícula" width="16" height="16">
+        </button>
+        <button class="view-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">
+          <img src="/icons/list.svg" alt="Vista de lista" width="16" height="16">
+        </button>
+      </div>
+    </div>
+
+    @if (mine.length === 0) {
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        <h3>No tienes alojamientos aún</h3>
+        <p>Comienza creando tu primer alojamiento para empezar a recibir huéspedes</p>
+        <a routerLink="/crear-alojamiento" class="btn-primary">Crear Mi Primer Alojamiento</a>
+      </div>
+    } @else {
+      <div class="listings-grid" [class.list-view]="viewMode === 'list'">
+        <app-accommodation-card *ngFor="let l of mine" [listing]="l" [hostView]="true" />
+      </div>
+    }
+  </div>
+</div>

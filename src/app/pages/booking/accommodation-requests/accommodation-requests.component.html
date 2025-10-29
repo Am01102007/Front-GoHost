@@ -1,0 +1,27 @@
+<section>
+  <h2>Solicitudes de alojamientos</h2>
+
+  <div *ngIf="solicitudes.length; else empty">
+    <article class="solicitud" *ngFor="let r of solicitudes">
+      <a [routerLink]="['/alojamientos', r.listingId]" class="thumb">
+        <img [src]="r.listing?.imagenes?.[0] || 'https://via.placeholder.com/80x80?text=Img'" alt="imagen" />
+      </a>
+      <div class="datos">
+        <h3>{{ r.listing?.titulo || 'Nombre reserva' }}</h3>
+        <div class="acciones">
+          <button class="btn aceptar" (click)="aceptar(r.id)">Aceptar</button>
+          <button class="btn rechazar" (click)="rechazar(r.id)">Rechazar</button>
+        </div>
+      </div>
+      <div class="detalles">
+        <p>En este espacio van los detalles de la reserva</p>
+        <p class="meta">Fechas: {{ r.fechaInicio }} — {{ r.fechaFin }} · Huéspedes: {{ r.huespedes }}</p>
+      </div>
+    </article>
+  </div>
+
+  <ng-template #empty>
+    <p class="empty">No hay solicitudes pendientes.</p>
+  </ng-template>
+</section>
+

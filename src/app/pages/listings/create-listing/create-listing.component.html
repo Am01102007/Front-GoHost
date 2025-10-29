@@ -1,0 +1,10 @@
+<h2>Crear alojamiento</h2>
+<form [formGroup]="form" (ngSubmit)="crear()" class="form">
+  <label>Título<input formControlName="titulo" /></label>
+  <label>Descripción<textarea formControlName="descripcion"></textarea></label>
+  <label>Dirección<input formControlName="direccion" /></label>
+  <label>Ciudad<input formControlName="ciudad" /></label>
+  <label>País<input formControlName="pais" /></label>
+  <label>Precio por noche<input type="number" formControlName="precioPorNoche" /></label>
+  <button type="submit" [disabled]="form.invalid">Crear</button>
+</form>

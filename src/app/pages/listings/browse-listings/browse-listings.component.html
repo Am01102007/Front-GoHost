@@ -1,0 +1,39 @@
+<section class="dashboard">
+  <div class="search-section">
+    <div class="search-bar">
+      <img src="/icons/map.svg" alt="Mapa" class="map-icon">
+      <input [(ngModel)]="ciudad" placeholder="Ciudad" class="search-input">
+      <span class="divider">|</span>
+      <input type="date" [(ngModel)]="fechaInicio" placeholder="Fecha inicio" class="search-input">
+      <span class="divider">|</span>
+      <input type="number" [(ngModel)]="numPersonas" placeholder="Número personas" class="search-input">
+    </div>
+  </div>
+
+  <div class="tabs-section">
+    <div class="tabs">
+      <button type="button" class="tab" [class.active]="view==='alojamientos'" (click)="view='alojamientos'">
+        <img src="/icons/lodging.svg" class="icon-img" alt="Alojamientos">
+        <span>Alojamientos</span>
+      </button>
+      <button type="button" class="tab" [class.active]="view==='servicios'" (click)="view='servicios'">
+        <img src="/icons/services.svg" class="icon-img" alt="Servicios">
+        <span>Servicios</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="view==='alojamientos'">
+      <app-accommodation-card *ngFor="let l of filtradas" [listing]="l" />
+    </div>
+
+    <div class="empty" *ngIf="view==='servicios'">
+      <div class="empty-content">
+        <img src="/icons/services.svg" alt="Servicios" class="empty-icon">
+        <h3>Próximamente</h3>
+        <p>Estamos trabajando en el catálogo de servicios adicionales.</p>
+      </div>
+    </div>
+  </div>
+</section>

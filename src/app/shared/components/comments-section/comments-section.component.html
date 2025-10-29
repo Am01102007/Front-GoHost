@@ -1,0 +1,41 @@
+<button type="button" class="pill" (click)="toggle()">Comentarios</button>
+
+<div class="overlay" *ngIf="open()">
+  <div class="modal">
+    <header class="modal-header">
+      <h3>Comentarios</h3>
+      <button type="button" class="close" (click)="toggle()">×</button>
+    </header>
+
+    <section class="list">
+      <article *ngFor="let c of items" class="comment">
+        <div class="meta">
+          <span class="user">{{ c.user || 'Anónimo' }}</span>
+          <span class="stars" [attr.aria-label]="c.rating + ' estrellas'">
+            <span *ngFor="let s of [1,2,3,4,5]" class="star" [class.on]="s <= c.rating">★</span>
+          </span>
+          <time>{{ c.createdAt | date:'short' }}</time>
+        </div>
+        <p class="text">{{ c.text }}</p>
+      </article>
+      <p *ngIf="items.length === 0" class="empty">Sé el primero en comentar.</p>
+    </section>
+
+    <form [formGroup]="form" (ngSubmit)="add()" class="form">
+      <label>Calificación
+        <select formControlName="rating">
+          <option *ngFor="let r of [1,2,3,4,5]" [value]="r">{{ r }}</option>
+        </select>
+      </label>
+      <label>Comentario
+        <textarea rows="3" formControlName="text" placeholder="Escribe tu opinión"></textarea>
+      </label>
+      <div class="actions">
+        <button type="submit" [disabled]="form.invalid" class="primary">Agregar</button>
+        <button type="button" (click)="toggle()" class="ghost">Cerrar</button>
+      </div>
+    </form>
+  </div>
+  <div class="backdrop" (click)="toggle()"></div>
+</div>
+

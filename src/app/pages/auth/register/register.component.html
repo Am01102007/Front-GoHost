@@ -1,0 +1,23 @@
+<div class="register-container">
+  <img src="/icons/map.svg" alt="map icon" class="map-icon">
+  <form [formGroup]="form" (ngSubmit)="register()" class="form">
+    <label>Nombre<input formControlName="nombre" placeholder="Nombre" /></label>
+    <label>Correo<input type="email" formControlName="email" placeholder="correo" /></label>
+    <label>Contraseña<input type="password" formControlName="password" placeholder="Contraseña" /></label>
+    <label>Teléfono<input formControlName="telefono" placeholder="Teléfono" /></label>
+    <label>Rol
+      <select formControlName="rol">
+        <option value="" disabled>Select option</option>
+        <option value="anfitrion">Anfitrión</option>
+        <option value="huesped">Huésped</option>
+      </select>
+    </label>
+    <label>Fecha de nacimiento<input type="date" formControlName="fechaNacimiento" /></label>
+    <button type="submit" [disabled]="form.invalid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+      </svg>
+      Crear Cuenta
+    </button>
+  </form>
+</div>

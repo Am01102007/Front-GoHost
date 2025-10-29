@@ -1,0 +1,74 @@
+<article class="card" [class.host-view]="hostView">
+  <div class="image-container">
+    <a [routerLink]="['/alojamientos', listing.id]">
+      <img [src]="listing.imagenes[0]" [alt]="listing.titulo" />
+    </a>
+    @if (hostView) {
+      <div class="host-actions">
+        <button class="action-btn edit" title="Editar">
+          <img src="/icons/edit.svg" alt="Editar" width="16" height="16">
+        </button>
+        <button class="action-btn stats" title="Estadísticas">
+          <img src="/icons/stats.svg" alt="Estadísticas" width="16" height="16">
+        </button>
+      </div>
+    }
+  </div>
+  
+  <div class="info">
+    <div class="header">
+      <h3>{{ listing.titulo }}</h3>
+      @if (hostView) {
+        <div class="status-badge active">Activo</div>
+      }
+    </div>
+    
+    <div class="rating-location">
+      <div class="stars">
+        <img src="/icons/star.svg" alt="Estrella" width="14" height="14">
+        <span class="rating">{{ (listing.calificacionPromedio || 0).toFixed(1) }}</span>
+      </div>
+      <div class="location">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span>{{ listing.ubicacion.ciudad }}, {{ listing.ubicacion.pais }}</span>
+      </div>
+    </div>
+    
+    <p class="descripcion">{{ listing.descripcion }}</p>
+    
+    <div class="amenities">
+      <span class="amenity" *ngFor="let amenity of listing.servicios.slice(0, 3)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        {{ amenity }}
+      </span>
+      @if (listing.servicios.length > 3) {
+        <span class="more-amenities">+{{ listing.servicios.length - 3 }} más</span>
+      }
+    </div>
+    
+    <div class="footer">
+      <div class="price">
+        <span class="amount">${{ listing.precioPorNoche }}</span>
+        <span class="period">/ noche</span>
+      </div>
+      
+      @if (hostView) {
+        <div class="host-stats">
+          <span class="stat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="m22 21-3-3m0 0a5 5 0 1 0-7-7 5 5 0 0 0 7 7z"/>
+            </svg>
+            12 reservas
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</article>

@@ -1,0 +1,5 @@
+.footer{border-top:4px solid var(--color-primary-200);padding:20px;background:#ffffff;color:#374151}
+.footer .content{display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto}
+.footer .brand{display:flex;gap:8px;align-items:center;color:#6b7280}
+.footer .brand strong{color:var(--color-primary-600)}
+.footer .links a{color:var(--color-primary);text-decoration:none;font-weight:600}
