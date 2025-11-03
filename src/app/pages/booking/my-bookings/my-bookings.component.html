@@ -20,8 +20,8 @@
           <p class="meta">Huéspedes: {{ r.huespedes }} · Total: ${{ r.total }}</p>
           <div class="actions">
             <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
-            <button class="btn pagar" (click)="pagar(r.id)" [disabled]="r.estado==='pagado'">Pagar ahora</button>
-            <button class="btn cancelar" (click)="cancelar(r.id)">Cancelar</button>
+            <button class="btn btn-primary" (click)="pagar(r.id)" [disabled]="r.estado==='pagado'">Pagar ahora</button>
+            <button class="btn btn-ghost" (click)="cancelar(r.id)">Cancelar</button>
           </div>
         </div>
       </article>

@@ -4,10 +4,22 @@
       <h1>Panel de Anfitrión</h1>
       <p>Gestiona tus alojamientos y reservas</p>
     </div>
-    <a routerLink="/crear-alojamiento" class="btn-primary">
-      <img src="/icons/plus.svg" alt="Crear" width="20" height="20">
-      Crear Alojamiento
-    </a>
+    <div class="header-actions">
+      <button type="button" class="btn-test" (click)="testBackendConnection()" title="Probar backend">
+        🧪 Test Backend
+      </button>
+      <button type="button" class="btn-refresh" (click)="refreshListings()" title="Actualizar datos">
+        🔄 Actualizar
+      </button>
+      <a routerLink="/crear-alojamiento" class="btn-primary">
+        <img src="/icons/plus.svg" alt="Crear" width="20" height="20">
+        Crear Alojamiento
+      </a>
+      <a routerLink="/reservas-anfitrion" class="btn-secondary" title="Ver reservas de mis alojamientos">
+        <img src="/icons/calendar.svg" alt="Reservas" width="20" height="20">
+        Ver Reservas
+      </a>
+    </div>
   </div>
 
   <div class="stats-grid">
@@ -16,7 +28,10 @@
         <img src="/icons/home.svg" alt="Alojamientos" width="24" height="24">
       </div>
       <div class="stat-content">
-        <h3>{{ mine.length }}</h3>
+        <h3 *ngIf="!loading(); else loadingTemplate">{{ mine.length }}</h3>
+        <ng-template #loadingTemplate>
+          <div class="loading-number">...</div>
+        </ng-template>
         <p>Alojamientos Activos</p>
       </div>
     </div>
@@ -26,30 +41,15 @@
         <img src="/icons/users.svg" alt="Reservas" width="24" height="24">
       </div>
       <div class="stat-content">
-        <h3>{{ totalBookings }}</h3>
+        <h3 *ngIf="!loading(); else loadingTemplate2">{{ totalBookings() }}</h3>
+        <ng-template #loadingTemplate2>
+          <div class="loading-number">...</div>
+        </ng-template>
         <p>Reservas Totales</p>
       </div>
     </div>
     
-    <div class="stat-card">
-      <div class="stat-icon">
-        <img src="/icons/dollar.svg" alt="Ingresos" width="24" height="24">
-      </div>
-      <div class="stat-content">
-        <h3>${{ totalEarnings }}</h3>
-        <p>Ingresos Totales</p>
-      </div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="stat-icon">
-        <img src="/icons/star.svg" alt="Calificación" width="24" height="24">
-      </div>
-      <div class="stat-content">
-        <h3>{{ averageRating.toFixed(1) }}</h3>
-        <p>Calificación Promedio</p>
-      </div>
-    </div>
+    <!-- Eliminadas métricas no respaldadas por la base de datos original -->
   </div>
 
   <div class="listings-section">
@@ -65,7 +65,14 @@
       </div>
     </div>
 
-    @if (mine.length === 0) {
+    <!-- Estado de carga -->
+    <div class="loading-state" *ngIf="loading()">
+      <div class="loading-spinner"></div>
+      <p>Cargando tus alojamientos...</p>
+    </div>
+
+    <!-- Estado vacío -->
+    @if (mine.length === 0 && !loading()) {
       <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -74,7 +81,10 @@
         <p>Comienza creando tu primer alojamiento para empezar a recibir huéspedes</p>
         <a routerLink="/crear-alojamiento" class="btn-primary">Crear Mi Primer Alojamiento</a>
       </div>
-    } @else {
+    }
+    
+    <!-- Lista de alojamientos -->
+    @if (mine.length > 0 && !loading()) {
       <div class="listings-grid" [class.list-view]="viewMode === 'list'">
         <app-accommodation-card *ngFor="let l of mine" [listing]="l" [hostView]="true" />
       </div>

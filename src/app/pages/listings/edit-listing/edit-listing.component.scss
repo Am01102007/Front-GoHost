@@ -1,0 +1,11 @@
+/* Estilos mínimos para el formulario de edición */
+.form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+label { display: flex; flex-direction: column; gap: 6px; }
+
+.btn.btn-primary { margin-top: 8px; }
+

@@ -2,9 +2,19 @@
   <img src="/icons/map.svg" alt="map icon" class="map-icon">
   <form [formGroup]="form" (ngSubmit)="register()" class="form">
     <label>Nombre<input formControlName="nombre" placeholder="Nombre" /></label>
+    <label>Apellidos<input formControlName="apellidos" placeholder="Apellidos" /></label>
     <label>Correo<input type="email" formControlName="email" placeholder="correo" /></label>
     <label>Contraseña<input type="password" formControlName="password" placeholder="Contraseña" /></label>
     <label>Teléfono<input formControlName="telefono" placeholder="Teléfono" /></label>
+    <label>Tipo de documento
+      <select formControlName="tipoDocumento">
+        <option value="" disabled>Seleccione</option>
+        <option *ngFor="let td of tipoDocumentoOptions" [value]="td">{{ td }}</option>
+      </select>
+    </label>
+    <label>Número de documento<input formControlName="numeroDocumento" placeholder="Número de documento" /></label>
+    <label>Ciudad<input formControlName="ciudad" placeholder="Ciudad" /></label>
+    <label>País<input formControlName="pais" placeholder="País" /></label>
     <label>Rol
       <select formControlName="rol">
         <option value="" disabled>Select option</option>
@@ -13,7 +23,7 @@
       </select>
     </label>
     <label>Fecha de nacimiento<input type="date" formControlName="fechaNacimiento" /></label>
-    <button type="submit" [disabled]="form.invalid">
+    <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
       </svg>

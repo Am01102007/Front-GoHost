@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ListingsService } from '../../../core/services/listings.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
   selector: 'app-my-bookings',
@@ -12,12 +13,18 @@ import { ListingsService } from '../../../core/services/listings.service';
   templateUrl: './my-bookings.component.html',
   styleUrls: ['./my-bookings.component.scss']
 })
-export class MyBookingsComponent {
+export class MyBookingsComponent implements OnInit {
   bookingsSvc = inject(BookingsService);
   auth = inject(AuthService);
   listings = inject(ListingsService);
+  notifications = inject(NotificationsService);
 
   tab: 'activas' | 'canceladas' = 'activas';
+
+  ngOnInit() {
+    // Cargar reservas del huésped autenticado y almacenarlas en la señal
+    this.bookingsSvc.fetchMine().subscribe();
+  }
 
   get items() {
     const uid = this.auth.currentUser()?.id;
@@ -39,10 +46,14 @@ export class MyBookingsComponent {
   }
 
   cancelar(id: string) {
-    this.bookingsSvc.cancelar(id);
+    this.bookingsSvc.cancelar(id).subscribe({
+      next: () => this.notifications.success('Reserva cancelada', 'Se canceló la reserva correctamente')
+    });
   }
 
   pagar(id: string) {
-    this.bookingsSvc.pagar(id);
+    this.bookingsSvc.pagar(id).subscribe({
+      next: () => this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente')
+    });
   }
 }

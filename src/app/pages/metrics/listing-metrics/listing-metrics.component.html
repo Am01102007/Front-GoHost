@@ -1,0 +1,34 @@
+<section class="metrics">
+  <div class="header">
+    <h1>Estadísticas: {{ title }}</h1>
+    <a routerLink="/mis-alojamientos" class="btn-secondary">Volver</a>
+  </div>
+
+  @if (!metrics) {
+    <div class="loading">Cargando métricas...</div>
+  } @else {
+    <div class="grid">
+      <div class="card">
+        <h3>Calificación Promedio</h3>
+        <p class="big">{{ metrics.promedioCalificacion.toFixed(1) }}</p>
+      </div>
+      <div class="card">
+        <h3>Reservas Totales</h3>
+        <p class="big">{{ metrics.totalReservas }}</p>
+      </div>
+      <div class="card">
+        <h3>Completadas</h3>
+        <p class="big">{{ metrics.reservasCompletadas }}</p>
+      </div>
+      <div class="card">
+        <h3>Canceladas</h3>
+        <p class="big">{{ metrics.reservasCanceladas }}</p>
+      </div>
+      <div class="card">
+        <h3>Ingresos Totales</h3>
+        <p class="big">${{ metrics.ingresosTotales.toFixed(2) }}</p>
+      </div>
+    </div>
+  }
+</section>
+

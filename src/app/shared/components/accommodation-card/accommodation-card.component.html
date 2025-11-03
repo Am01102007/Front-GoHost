@@ -1,15 +1,40 @@
 <article class="card" [class.host-view]="hostView">
   <div class="image-container">
     <a [routerLink]="['/alojamientos', listing.id]">
-      <img [src]="listing.imagenes[0]" [alt]="listing.titulo" />
+      <img [src]="listing.imagenes?.[0] || '/icons/lodging.svg'" [alt]="listing.titulo || 'Alojamiento'" (error)="onImageError($event)" />
     </a>
+    
+    <!-- Botón de favoritos para vista de huésped -->
+    @if (!hostView) {
+      <button 
+        class="favorite-btn" 
+        [class.is-favorite]="isFavorite"
+        (click)="toggleFavorite($event)"
+        [title]="isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+        type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>
+    }
+    
+    <!-- Acciones para vista de anfitrión -->
     @if (hostView) {
       <div class="host-actions">
-        <button class="action-btn edit" title="Editar">
+        <button class="action-btn edit" title="Editar" [routerLink]="['/editar-alojamiento', listing.id]" type="button">
           <img src="/icons/edit.svg" alt="Editar" width="16" height="16">
         </button>
-        <button class="action-btn stats" title="Estadísticas">
+        <button class="action-btn stats" title="Estadísticas" [routerLink]="['/metricas', listing.id]" type="button">
           <img src="/icons/stats.svg" alt="Estadísticas" width="16" height="16">
+        </button>
+        <button class="action-btn delete" title="Eliminar alojamiento" (click)="deleteListing($event)" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18"/>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
         </button>
       </div>
     }
@@ -33,7 +58,9 @@
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
           <circle cx="12" cy="10" r="3"/>
         </svg>
-        <span>{{ listing.ubicacion.ciudad }}, {{ listing.ubicacion.pais }}</span>
+        <span>
+          {{ listing.ubicacion.direccion ? (listing.ubicacion.direccion + ', ') : '' }}{{ listing.ubicacion.ciudad }}, {{ listing.ubicacion.pais }}
+        </span>
       </div>
     </div>
     
@@ -57,18 +84,7 @@
         <span class="period">/ noche</span>
       </div>
       
-      @if (hostView) {
-        <div class="host-stats">
-          <span class="stat">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="m22 21-3-3m0 0a5 5 0 1 0-7-7 5 5 0 0 0 7 7z"/>
-            </svg>
-            12 reservas
-          </span>
-        </div>
-      }
+      
     </div>
   </div>
 </article>

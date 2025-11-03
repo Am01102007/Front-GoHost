@@ -1,41 +1,64 @@
 <h2>Actualizar mis datos</h2>
 <form [formGroup]="form" (ngSubmit)="save()" class="perfil-grid">
   <section class="bloque">
-    <h3>Nombre</h3>
+    <h3>Información Personal</h3>
     <div class="campos">
-      <label>Nombre<input formControlName="nombre" placeholder="Nombre"/></label>
-      <label>Apellido<input formControlName="apellido" placeholder="Apellido"/></label>
-      <label>Correo<input type="email" formControlName="email" placeholder="Correo"/></label>
+      <label>Nombre
+        <input formControlName="nombre" placeholder="Nombre" [class.error]="form.get('nombre')?.invalid && form.get('nombre')?.touched"/>
+      </label>
+      <label>Apellidos
+        <input formControlName="apellido" placeholder="Apellidos"/>
+      </label>
+      <label>Correo
+        <input type="email" formControlName="email" placeholder="Correo" [class.error]="form.get('email')?.invalid && form.get('email')?.touched"/>
+        <span class="error-message" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Ingresa un correo válido
+        </span>
+      </label>
     </div>
     <h3>Teléfono</h3>
     <div class="campos">
-      <label>Código<input formControlName="telefonoCodigo" placeholder="Código"/></label>
+      <label>Código de país
+        <input formControlName="telefonoCodigo" placeholder="+57"/>
+      </label>
     </div>
   </section>
 
   <section class="bloque">
     <h3>Cambiar contraseña</h3>
     <div class="campos">
-      <label>Contraseña Actual<input type="password" formControlName="passwordActual" placeholder="Contraseña Actual"/></label>
-      <label>Contraseña Nueva<input type="password" formControlName="passwordNueva" placeholder="Contraseña Nueva"/></label>
+      <label>Contraseña Actual
+        <input type="password" formControlName="passwordActual" placeholder="Contraseña Actual"/>
+      </label>
+      <label>Contraseña Nueva
+        <input type="password" formControlName="passwordNueva" placeholder="Contraseña Nueva"/>
+      </label>
     </div>
-    <button type="button" class="btn ghost" (click)="cambiarContrasena()">Cambiar contraseña</button>
+    <button type="button" class="btn ghost" (click)="cambiarContrasena()" [disabled]="saving">
+      {{ saving ? 'Cambiando...' : 'Cambiar contraseña' }}
+    </button>
   </section>
 
   <section class="bloque">
     <h3>Descripción personal</h3>
     <label>
-      <textarea rows="4" formControlName="descripcion" placeholder="Descripción"></textarea>
+      <textarea rows="4" formControlName="descripcion" placeholder="Cuéntanos sobre ti..."></textarea>
     </label>
 
     <h3>Documentos legales</h3>
     <label class="file">
-      <input type="file" (change)="onSubirDocumentos($event)" multiple />
-      <span>Subir archivos +</span>
+      <input type="file" (change)="onSubirDocumentos($event)" multiple accept=".pdf,.jpg,.jpeg,.png"/>
+      <span>📎 Subir archivos (PDF, JPG, PNG)</span>
     </label>
-    <ul class="lista-archivos">
-      <li *ngFor="let d of documentos">{{ d }}</li>
+    <ul class="lista-archivos" *ngIf="documentos.length > 0">
+      <li *ngFor="let doc of documentos; let i = index" class="documento-item">
+        <span>{{ doc }}</span>
+        <button type="button" class="btn-remove" (click)="removeDocument(i)" title="Eliminar documento">
+          ✕
+        </button>
+      </li>
     </ul>
+    <p class="hint" *ngIf="documentos.length === 0">No hay documentos subidos</p>
   </section>
 
   <section class="bloque foto">
@@ -43,14 +66,17 @@
     <div class="avatar">
       <img src="https://static-00.iconduck.com/assets.00/user-avatar-azul-illustration-512x512-1m2e1d97.png" alt="avatar"/>
     </div>
-    <label class="btn" >
-      <input type="file" accept="image/*" (change)="onSubirFoto($event)" />
-      Subir foto de perfil
+    <label class="btn">
+      <input type="file" accept="image/*" (change)="onSubirFoto($event)"/>
+      📷 Subir foto de perfil
     </label>
     <p class="hint" *ngIf="fotoPerfilNombre">Seleccionado: {{ fotoPerfilNombre }}</p>
+    <p class="hint" *ngIf="!fotoPerfilNombre">Máximo 2MB, formatos JPG/PNG</p>
   </section>
 
   <div class="guardar-row">
-    <button type="submit" class="btn primary ancho">Guardar cambios</button>
+    <button type="submit" class="btn primary ancho" [disabled]="form.invalid || saving">
+      {{ saving ? 'Guardando cambios...' : 'Guardar cambios' }}
+    </button>
   </div>
 </form>

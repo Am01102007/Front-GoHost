@@ -15,14 +15,20 @@ export class RegisterComponent {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   router = inject(Router);
+  tipoDocumentoOptions = ['CC', 'CE', 'PASAPORTE', 'NIT', 'DNI'];
 
   form = this.fb.group({
     nombre: ['', Validators.required],
+    apellidos: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
     telefono: ['', Validators.required],
     rol: ['', Validators.required],
-    fechaNacimiento: ['', Validators.required]
+    fechaNacimiento: ['', Validators.required],
+    tipoDocumento: ['', Validators.required],
+    numeroDocumento: ['', Validators.required],
+    ciudad: ['', Validators.required],
+    pais: ['', Validators.required]
   });
 
   register() {
@@ -30,11 +36,11 @@ export class RegisterComponent {
     const v = this.form.value;
     this.auth.register({
       nombre: v.nombre!,
+      apellido: v.apellidos!,
       email: v.email!,
       password: v.password!,
       telefono: v.telefono!,
-      rol: v.rol!,
-      fechaNacimiento: v.fechaNacimiento!
+      rol: (v.rol === 'anfitrion' ? 'ANFITRION' : 'HUESPED') as 'ANFITRION' | 'HUESPED'
     })
       .subscribe(() => this.router.navigate(['/']));
   }

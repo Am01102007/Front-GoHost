@@ -1,10 +1,138 @@
 <h2>Crear alojamiento</h2>
 <form [formGroup]="form" (ngSubmit)="crear()" class="form">
-  <label>Título<input formControlName="titulo" /></label>
-  <label>Descripción<textarea formControlName="descripcion"></textarea></label>
-  <label>Dirección<input formControlName="direccion" /></label>
-  <label>Ciudad<input formControlName="ciudad" /></label>
-  <label>País<input formControlName="pais" /></label>
-  <label>Precio por noche<input type="number" formControlName="precioPorNoche" /></label>
-  <button type="submit" [disabled]="form.invalid">Crear</button>
+  <div class="form-section">
+    <h3>Información básica</h3>
+    <label>
+      Título *
+      <input formControlName="titulo" placeholder="Ej: Hermoso apartamento en el centro" [class.error]="form.get('titulo')?.invalid && form.get('titulo')?.touched"/>
+    </label>
+    
+    <label>
+      Descripción *
+      <textarea formControlName="descripcion" rows="4" placeholder="Describe tu alojamiento, sus características y lo que lo hace especial..." [class.error]="form.get('descripcion')?.invalid && form.get('descripcion')?.touched"></textarea>
+    </label>
+  </div>
+
+  <div class="form-section">
+    <h3>Ubicación</h3>
+    <label>
+      Dirección *
+      <input formControlName="direccion" placeholder="Ej: Calle 123 #45-67" [class.error]="form.get('direccion')?.invalid && form.get('direccion')?.touched"/>
+    </label>
+    
+    <div class="form-row">
+      <label>
+        Ciudad *
+        <input formControlName="ciudad" placeholder="Ej: Bogotá" [class.error]="form.get('ciudad')?.invalid && form.get('ciudad')?.touched"/>
+      </label>
+      
+      <label>
+        País *
+        <input formControlName="pais" placeholder="Ej: Colombia" [class.error]="form.get('pais')?.invalid && form.get('pais')?.touched"/>
+      </label>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h3>Detalles del alojamiento</h3>
+    <div class="form-row">
+      <label>
+        Precio por noche (USD) *
+        <input type="number" formControlName="precioPorNoche" min="1" placeholder="100" [class.error]="form.get('precioPorNoche')?.invalid && form.get('precioPorNoche')?.touched"/>
+      </label>
+      
+      <label>
+        Capacidad (huéspedes) *
+        <input type="number" formControlName="capacidad" min="1" placeholder="2" [class.error]="form.get('capacidad')?.invalid && form.get('capacidad')?.touched"/>
+      </label>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h3>Servicios del alojamiento</h3>
+    <p class="helper">Agrega servicios como WiFi, Piscina, Aire acondicionado, etc.</p>
+
+    <div class="form-row">
+      <label style="flex:1">
+        Servicio
+        <input #servInput type="text" placeholder="Ej: WiFi" (keydown.enter)="addService(servInput.value); servInput.value=''; $event.preventDefault()" />
+      </label>
+      <button type="button" class="btn btn-outline" (click)="addService(servInput.value); servInput.value=''">Agregar</button>
+    </div>
+
+    <div class="chips" *ngIf="(form.value.servicios || []).length > 0">
+      <div class="chip" *ngFor="let s of form.value.servicios; let i = index">
+        <span>{{ s }}</span>
+        <button type="button" class="remove" (click)="removeService(i)" title="Eliminar">✕</button>
+      </div>
+    </div>
+
+    <div class="quick-services">
+      <span class="quick-title">Servicios comunes:</span>
+      <button type="button" class="quick" *ngFor="let item of serviciosComunes" (click)="addService(item)">{{ item }}</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <h3>Imágenes del alojamiento</h3>
+    <p class="image-requirements">
+      📸 Sube entre {{ MIN_IMAGES }} y {{ MAX_IMAGES }} imágenes de tu alojamiento (máximo 5MB cada una)
+    </p>
+    
+    <div class="image-upload-area">
+      <label class="upload-button" [class.disabled]="!canAddMoreImages">
+        <input 
+          type="file" 
+          (change)="onFilesSelected($event)" 
+          accept="image/*" 
+          multiple
+          [disabled]="!canAddMoreImages"
+        />
+        <span *ngIf="canAddMoreImages">
+          📷 Seleccionar imágenes ({{ selectedFiles.length }}/{{ MAX_IMAGES }})
+        </span>
+        <span *ngIf="!canAddMoreImages">
+          ✅ Máximo de imágenes alcanzado ({{ MAX_IMAGES }})
+        </span>
+      </label>
+    </div>
+
+    <div class="images-grid" *ngIf="photoPreviews.length > 0">
+      <div class="image-preview" *ngFor="let preview of photoPreviews; let i = index">
+        <img [src]="preview" [alt]="'Vista previa ' + (i + 1)" />
+        <button type="button" class="remove-image" (click)="removeImage(i)" title="Eliminar imagen">
+          ✕
+        </button>
+        <div class="image-number">{{ i + 1 }}</div>
+      </div>
+    </div>
+
+    <div class="validation-status" [class.error]="!hasMinimumImages && selectedFiles.length > 0" [class.success]="hasMinimumImages">
+      <span *ngIf="selectedFiles.length === 0">
+        ⚠️ Debes subir al menos {{ MIN_IMAGES }} imagen(es)
+      </span>
+      <span *ngIf="selectedFiles.length > 0 && !hasMinimumImages">
+        ⚠️ Necesitas {{ MIN_IMAGES - selectedFiles.length }} imagen(es) más
+      </span>
+      <span *ngIf="hasMinimumImages">
+        ✅ Tienes {{ selectedFiles.length }} imagen(es) seleccionada(s)
+      </span>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button 
+      type="submit" 
+      class="btn btn-primary" 
+      [disabled]="form.invalid || !hasMinimumImages || uploading"
+    >
+      <span *ngIf="!uploading">Crear alojamiento</span>
+      <span *ngIf="uploading">Subiendo imágenes y creando...</span>
+    </button>
+    
+    <p class="form-hint" *ngIf="form.invalid || !hasMinimumImages">
+      <span *ngIf="form.invalid">⚠️ Completa todos los campos requeridos</span>
+      <span *ngIf="!hasMinimumImages && form.valid">⚠️ Agrega al menos {{ MIN_IMAGES }} imagen(es)</span>
+    </p>
+  </div>
 </form>

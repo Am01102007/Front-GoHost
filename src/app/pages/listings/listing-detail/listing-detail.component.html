@@ -1,5 +1,5 @@
 <section class="listing-detail" *ngIf="listing; else notFound">
-  <!-- Header -->
+  <!-- Encabezado -->
   <div class="header">
     <div class="title-section">
       <h1>{{ listing.titulo }}</h1>
@@ -11,7 +11,7 @@
         <div class="stars">
           <span *ngFor="let s of [1,2,3,4,5]" class="star" [class.filled]="s <= round(listing.calificacionPromedio || 0)">★</span>
         </div>
-        <span class="rating-text">{{ listing.calificacionPromedio || 0 }} ({{ listing.numeroResenas || 0 }} reseñas)</span>
+        <span class="rating-text">{{ listing.calificacionPromedio || 0 }}</span>
       </div>
     </div>
     <div class="price-section">
@@ -20,21 +20,21 @@
     </div>
   </div>
 
-  <!-- Image Gallery -->
+  <!-- Galería de imágenes -->
   <div class="gallery">
     <div class="main-image">
-      <img [src]="listing.imagenes?.[0] || 'https://picsum.photos/600/400'" [alt]="listing.titulo" />
+      <img [src]="listing.imagenes?.[0] || 'https://picsum.photos/600/400'" [alt]="listing.titulo" (error)="onImgError($event, true)" />
     </div>
     <div class="thumbnail-grid" *ngIf="listing.imagenes && listing.imagenes.length > 1">
-      <img *ngFor="let img of listing.imagenes.slice(1, 5)" [src]="img" [alt]="listing.titulo" />
+      <img *ngFor="let img of listing.imagenes.slice(1, 5)" [src]="img || '/icons/lodging.svg'" [alt]="listing.titulo || 'Alojamiento'" (error)="onImgError($event)" />
     </div>
   </div>
 
-  <!-- Content Grid -->
+  <!-- Cuadrícula de contenido -->
   <div class="content-grid">
-    <!-- Left Column -->
+    <!-- Columna izquierda -->
     <div class="main-content">
-      <!-- Host Info -->
+    <!-- Información del anfitrión -->
       <div class="host-section">
         <div class="host-info">
           <div class="host-avatar">
@@ -47,13 +47,13 @@
         </div>
       </div>
 
-      <!-- Description -->
+      <!-- Descripción -->
       <div class="description-section">
         <h3>Acerca de este lugar</h3>
         <p>{{ listing.descripcion || 'Hermoso alojamiento en una ubicación privilegiada. Perfecto para relajarse y disfrutar de una experiencia única.' }}</p>
       </div>
 
-      <!-- Amenities -->
+      <!-- Servicios -->
       <div class="amenities-section">
         <h3>Lo que ofrece este lugar</h3>
         <div class="amenities-grid">
@@ -76,20 +76,31 @@
         </div>
       </div>
 
-      <!-- Map -->
+      <!-- Mapa -->
       <div class="map-section">
-        <h3>Ubicación</h3>
-        <div id="map" class="map"></div>
+      <h3>Ubicación</h3>
+      <div class="map-controls" style="margin-bottom:8px; display:flex; gap:8px;">
+        <button class="btn btn-primary" (click)="toggleRoute()">
+          {{ routeEnabled ? 'Ocultar ruta' : 'Mostrar ruta desde mi ubicación' }}
+        </button>
+        <button class="btn btn-secondary" (click)="toggle3D()">
+          {{ terrainEnabled ? 'Desactivar 3D' : 'Activar 3D' }}
+        </button>
       </div>
+      <div class="user-location" *ngIf="userOrigin" style="margin-bottom:6px; color:#374151; font-size:0.9rem;">
+        Mi ubicación: {{ userOrigin.lat }}, {{ userOrigin.lng }}
+      </div>
+      <div id="map" class="map"></div>
+    </div>
 
-      <!-- Reviews -->
+      <!-- Reseñas -->
       <div class="reviews-section">
         <h3>Reseñas</h3>
         <app-comments-section [listingId]="listing.id"></app-comments-section>
       </div>
     </div>
 
-    <!-- Right Column - Booking Card -->
+    <!-- Columna derecha - Tarjeta de reserva -->
     <div class="booking-sidebar">
       <div class="booking-card">
         <div class="booking-header">
@@ -119,7 +130,7 @@
             </select>
           </div>
           
-          <button class="btn-reserve" [routerLink]="['/checkout']">
+          <button class="btn btn-primary" [routerLink]="['/checkout']">
             Reservar ahora
           </button>
           
@@ -135,7 +146,7 @@
     <div class="not-found-content">
       <h2>Alojamiento no encontrado</h2>
       <p>Lo sentimos, el alojamiento que buscas no existe o ha sido eliminado.</p>
-      <button class="btn-primary" routerLink="/">Volver al inicio</button>
+      <button class="btn btn-primary" routerLink="/">Volver al inicio</button>
     </div>
   </div>
 </ng-template>

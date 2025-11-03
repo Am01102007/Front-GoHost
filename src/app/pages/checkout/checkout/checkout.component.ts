@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { v4 as uuidv4 } from 'uuid';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
   selector: 'app-checkout',
@@ -16,6 +16,7 @@ export class CheckoutComponent {
   fb = inject(FormBuilder);
   bookings = inject(BookingsService);
   auth = inject(AuthService);
+  notifications = inject(NotificationsService);
 
   form = this.fb.group({
     listingId: ['', Validators.required],
@@ -28,19 +29,22 @@ export class CheckoutComponent {
   private crearReserva(estado: 'pendiente' | 'pagado') {
     if (this.form.invalid || !this.auth.currentUser()) return;
     const v = this.form.value;
-    const days = this.diffDays(v.fechaInicio!, v.fechaFin!);
-    const total = days * 100; // mock tarifa
-    this.bookings.add({
-      id: uuidv4(),
-      listingId: v.listingId!,
-      userId: this.auth.currentUser()!.id,
-      fechaInicio: v.fechaInicio!,
-      fechaFin: v.fechaFin!,
-      huespedes: v.huespedes!,
-      total,
-      estado
+    this.bookings.create({
+      alojamientoId: v.listingId!,
+      checkIn: v.fechaInicio!,
+      checkOut: v.fechaFin!,
+      numeroHuespedes: v.huespedes!
+    }).subscribe(res => {
+      if (estado === 'pagado') {
+        this.bookings.updateStatus(res.id, 'pagado').subscribe(() => {
+          this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente');
+          this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
+        });
+      } else {
+        this.notifications.success('Reserva creada', 'Tu reserva quedó pendiente de pago');
+        this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
+      }
     });
-    this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
   }
 
   reservarPendiente() { this.crearReserva('pendiente'); }

@@ -2,6 +2,6 @@
 <form [formGroup]="form" (ngSubmit)="login()" class="form">
   <label>Email<input type="email" formControlName="email" /></label>
   <label>Contraseña<input type="password" formControlName="password" /></label>
-  <button type="submit" [disabled]="form.invalid">Entrar</button>
+  <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Entrar</button>
   <a routerLink="/recuperar" class="link">¿Olvidaste tu contraseña?</a>
 </form>

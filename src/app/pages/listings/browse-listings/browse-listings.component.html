@@ -2,11 +2,121 @@
   <div class="search-section">
     <div class="search-bar">
       <img src="/icons/map.svg" alt="Mapa" class="map-icon">
-      <input [(ngModel)]="ciudad" placeholder="Ciudad" class="search-input">
+      <input 
+        [value]="ciudad()" 
+        (input)="updateCiudad($event.target.value)"
+        placeholder="Ciudad" 
+        class="search-input"
+        (keydown)="onEnterKey($event)"
+        [disabled]="loading()"
+      >
       <span class="divider">|</span>
-      <input type="date" [(ngModel)]="fechaInicio" placeholder="Fecha inicio" class="search-input">
+      <input 
+        type="date" 
+        [value]="fechaInicio() || ''" 
+        (input)="updateFechaInicio($event.target.value || undefined)"
+        placeholder="Fecha inicio" 
+        class="search-input"
+        [disabled]="loading()"
+      >
       <span class="divider">|</span>
-      <input type="number" [(ngModel)]="numPersonas" placeholder="Número personas" class="search-input">
+      <input 
+        type="number" 
+        [value]="numPersonas() || ''" 
+        (input)="updateNumPersonas($event.target.value ? +$event.target.value : undefined)"
+        placeholder="Número personas" 
+        class="search-input"
+        min="1"
+        max="20"
+        (keydown)="onEnterKey($event)"
+        [disabled]="loading()"
+      >
+      <span class="divider">|</span>
+      <div class="services-input-container">
+        <input 
+          [value]="servicios()" 
+          (input)="updateServicios($event.target.value)"
+          placeholder="Servicios (ej: WiFi, Piscina)" 
+          class="search-input services-input"
+          (keydown)="onEnterKey($event)"
+          [disabled]="loading()"
+        >
+        <div class="services-dropdown" *ngIf="!loading()">
+          <div class="services-grid">
+            <button 
+              type="button" 
+              class="service-tag" 
+              *ngFor="let servicio of serviciosComunes"
+              (click)="onServicioSelect(servicio)"
+            >
+              {{ servicio }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="buscar()"
+        [disabled]="loading()"
+      >
+        <span *ngIf="!loading()">🔍 Buscar</span>
+        <span *ngIf="loading()">⏳ Buscando...</span>
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="limpiarFiltros()"
+        [disabled]="loading() || !hasFilters()"
+        *ngIf="hasFilters() || hasSearched()"
+      >
+        ✕ Limpiar
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-outline" 
+        (click)="refreshData()"
+        [disabled]="loading()"
+        title="Actualizar datos"
+      >
+        🔄 Actualizar
+      </button>
+    </div>
+    
+    <!-- Indicador de filtros activos -->
+    <div class="active-filters" *ngIf="hasFilters()">
+      <span class="filter-label">Filtros activos:</span>
+      <span class="filter-tag" *ngIf="ciudad()">
+        📍 {{ ciudad() }}
+      </span>
+      <span class="filter-tag" *ngIf="numPersonas()">
+        👥 {{ numPersonas() }} persona(s)
+      </span>
+      <span class="filter-tag" *ngIf="servicios()">
+        🏷️ {{ servicios() }}
+      </span>
+    </div>
+    
+    <!-- Estadísticas de búsqueda -->
+    <div class="search-stats" *ngIf="searchStats().total > 0">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value">{{ searchStats().total }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item" *ngIf="hasFilters()">
+          <span class="stat-value">{{ searchStats().filtered }}</span>
+          <span class="stat-label">Filtrados</span>
+        </div>
+        <div class="stat-item" *ngIf="searchStats().cities > 0">
+          <span class="stat-value">{{ searchStats().cities }}</span>
+          <span class="stat-label">Ciudades</span>
+        </div>
+        <div class="stat-item" *ngIf="searchStats().averagePrice > 0">
+          <span class="stat-value">${{ searchStats().averagePrice | number:'1.0-0' }}</span>
+          <span class="stat-label">Precio promedio</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -24,10 +134,47 @@
   </div>
 
   <div class="content-section">
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="view==='alojamientos'">
-      <app-accommodation-card *ngFor="let l of filtradas" [listing]="l" />
+    <!-- Loading state -->
+    <div class="loading-state" *ngIf="loading()">
+      <div class="loading-spinner"></div>
+      <p>Cargando alojamientos...</p>
     </div>
 
+    <!-- Results for alojamientos -->
+    <div *ngIf="view==='alojamientos' && !loading()">
+      <!-- Results count -->
+      <div class="results-info" *ngIf="filtradas().length > 0">
+        <p>
+          <strong>{{ filtradas().length }}</strong> 
+          {{ filtradas().length === 1 ? 'alojamiento encontrado' : 'alojamientos encontrados' }}
+          <span *ngIf="hasSearched() && hasFilters()"> con los filtros aplicados</span>
+        </p>
+      </div>
+
+      <!-- Results grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="filtradas().length > 0">
+        <app-accommodation-card *ngFor="let l of filtradas()" [listing]="l" />
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="filtradas().length === 0">
+        <div class="empty-content">
+          <img src="/icons/search.svg" alt="Sin resultados" class="empty-icon">
+          <h3 *ngIf="hasSearched()">No se encontraron alojamientos</h3>
+          <h3 *ngIf="!hasSearched()">No hay alojamientos disponibles</h3>
+          <p *ngIf="hasSearched() && hasFilters()">
+            Intenta modificar tus criterios de búsqueda o 
+            <button type="button" class="link-button" (click)="limpiarFiltros()">eliminar los filtros</button>.
+          </p>
+          <p *ngIf="!hasSearched()">
+            Actualmente no hay alojamientos disponibles para mostrar.
+            <button type="button" class="link-button" (click)="refreshData()">Cargar datos</button>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services tab (unchanged) -->
     <div class="empty" *ngIf="view==='servicios'">
       <div class="empty-content">
         <img src="/icons/services.svg" alt="Servicios" class="empty-icon">

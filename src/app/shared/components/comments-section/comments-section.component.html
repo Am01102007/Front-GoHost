@@ -31,11 +31,10 @@
         <textarea rows="3" formControlName="text" placeholder="Escribe tu opinión"></textarea>
       </label>
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid" class="primary">Agregar</button>
-        <button type="button" (click)="toggle()" class="ghost">Cerrar</button>
+        <button type="submit" [disabled]="form.invalid" class="btn btn-primary">Agregar</button>
+        <button type="button" (click)="toggle()" class="btn btn-ghost">Cerrar</button>
       </div>
     </form>
   </div>
   <div class="backdrop" (click)="toggle()"></div>
 </div>
-

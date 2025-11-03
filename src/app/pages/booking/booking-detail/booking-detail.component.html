@@ -1,0 +1,40 @@
+<section class="booking-detail" *ngIf="booking(); else notFound">
+  <div class="header">
+    <h1>Detalle de Reserva</h1>
+    <button class="btn-secondary" (click)="volver()">← Volver</button>
+  </div>
+
+  <div class="content">
+    <div class="summary">
+      <div class="thumb">
+        <img [src]="listing()?.imagenes?.[0] || '/images/placeholder.jpg'" alt="Alojamiento" />
+      </div>
+      <div class="info">
+        <h2>{{ listing()?.titulo || 'Alojamiento' }}</h2>
+        <p>ID Reserva: {{ booking()?.id }}</p>
+        <p>Fechas: {{ booking()?.fechaInicio }} → {{ booking()?.fechaFin }}</p>
+        <p>Huéspedes: {{ booking()?.huespedes }}</p>
+        <p>Estado: <span class="chip" [class.pending]="booking()?.estado==='pendiente'" [class.paid]="booking()?.estado==='pagado'" [class.cancelled]="booking()?.estado==='cancelado'">{{ booking()?.estado }}</span></p>
+        <div class="links">
+          <a [routerLink]="['/alojamientos', booking()?.listingId]" class="btn">Ver Alojamiento</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn success" *ngIf="booking()?.estado==='pendiente'" (click)="aceptar()">Aceptar</button>
+      <button class="btn danger" *ngIf="booking()?.estado==='pendiente'" (click)="rechazar()">Rechazar</button>
+      <button class="btn" *ngIf="booking()?.estado==='pendiente'" (click)="marcarPagado()">Marcar como pagada</button>
+      <button class="btn danger" *ngIf="booking()?.estado!=='cancelado'" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+</section>
+
+<ng-template #notFound>
+  <div class="not-found">
+    <h2>Reserva no encontrada</h2>
+    <p>No se pudo localizar la reserva solicitada.</p>
+    <button class="btn-secondary" (click)="volver()">Volver</button>
+  </div>
+</ng-template>
+

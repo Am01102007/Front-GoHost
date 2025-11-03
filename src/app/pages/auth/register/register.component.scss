@@ -26,29 +26,10 @@ label {
 
 input,
 select {
-  border: 1px solid var(--primary-color-light);
+  border: 1px solid var(--color-primary-200);
   border-radius: 0.5rem;
   padding: 0.75rem;
   font-size: 1rem;
   width: 100%;
-}
-
-button {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-button svg {
-  fill: white;
 }
 

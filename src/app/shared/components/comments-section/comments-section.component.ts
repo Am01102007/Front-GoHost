@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CommentsService, CommentItem } from '../../../core/services/comments.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ListingsService } from '../../../core/services/listings.service';
 
 @Component({
   selector: 'app-comments-section',
@@ -16,6 +17,7 @@ export class CommentsSectionComponent {
   fb = inject(FormBuilder);
   commentsSvc = inject(CommentsService);
   auth = inject(AuthService);
+  listings = inject(ListingsService);
 
   open = signal(false);
 
@@ -36,8 +38,13 @@ export class CommentsSectionComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     const user = this.auth.currentUser()?.nombre;
+    const currentUserId = this.auth.currentUser()?.id;
+    const listing = this.listings.getById(this.listingId);
+    if (listing && currentUserId && listing.anfitrionId === currentUserId) {
+      console.warn('No puedes comentar tu propio alojamiento');
+      return;
+    }
     this.commentsSvc.add(this.listingId, { text: v.text, rating: v.rating, user });
     this.form.reset({ rating: 5, text: '' });
   }
 }
-

@@ -1,24 +1,78 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password.component.html',
   styleUrls: ['./reset-password.component.scss']
 })
 export class ResetPasswordComponent {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
-  success = false;
+  notify = inject(NotificationsService);
+  
+  step: 'request' | 'confirm' | 'success' = 'request';
+  loading = false;
 
-  form = this.fb.group({ email: ['', [Validators.required, Validators.email]] });
+  form = this.fb.group({ 
+    email: ['', [Validators.required, Validators.email]] 
+  });
+  
+  confirmForm = this.fb.group({
+    token: ['', [Validators.required, Validators.minLength(6)]],
+    nuevaPassword: ['', [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
+    ]]
+  });
 
   submit() {
-    if (this.form.invalid) return;
-    this.auth.resetPassword(this.form.value.email!).subscribe(() => this.success = true);
+    if (this.form.invalid || this.loading) return;
+    
+    this.loading = true;
+    const email = this.form.value.email!;
+    
+    this.auth.resetPassword(email).subscribe({
+      next: () => {
+        this.loading = false;
+        this.step = 'confirm';
+        this.notify.success('Código enviado', 'Revisa tu correo electrónico.');
+      },
+      error: (err) => {
+        this.loading = false;
+        this.notify.httpError(err);
+      }
+    });
+  }
+
+  confirm() {
+    if (this.confirmForm.invalid || this.loading) return;
+    
+    this.loading = true;
+    const { token, nuevaPassword } = this.confirmForm.value as any;
+    
+    this.auth.confirmResetPassword(token, nuevaPassword).subscribe({
+      next: () => {
+        this.loading = false;
+        this.step = 'success';
+        this.notify.success('Contraseña restablecida', 'Ya puedes iniciar sesión con tu nueva contraseña.');
+      },
+      error: (err) => {
+        this.loading = false;
+        this.notify.httpError(err);
+      }
+    });
+  }
+
+  goBack() {
+    this.step = 'request';
+    this.confirmForm.reset();
   }
 }

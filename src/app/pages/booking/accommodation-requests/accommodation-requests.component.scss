@@ -10,3 +10,15 @@
 .empty{color:#6b7280}
 h2{margin:10px 0 16px}
 
+/* Diseño responsivo */
+@media (max-width: 768px) {
+  /* Reduce a dos columnas: miniatura + contenido */
+  .solicitud { grid-template-columns: 84px 1fr; }
+}
+
+@media (max-width: 480px) {
+  /* Miniatura más pequeña y acciones en varias líneas */
+  .thumb img { width: 64px; height: 64px; }
+  .solicitud { grid-template-columns: 64px 1fr; }
+  .acciones { flex-wrap: wrap; }
+}

@@ -17,12 +17,12 @@
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()">Dashboard</a></li>
       
       @if (auth.isLoggedIn()) {
-        @if (currentUser()?.rol === 'huesped') {
+        @if (currentUser()?.rol?.toLowerCase() === 'huesped') {
           <!-- Navegación para huéspedes -->
           <li><a routerLink="/mis-reservas" routerLinkActive="active" (click)="closeMobileMenu()">Mis Reservas</a></li>
           <li><a routerLink="/historial-de-estadias" routerLinkActive="active" (click)="closeMobileMenu()">Historial</a></li>
           <li><a routerLink="/favoritos" routerLinkActive="active" (click)="closeMobileMenu()">Favoritos</a></li>
-        } @else if (currentUser()?.rol === 'anfitrion') {
+        } @else if (currentUser()?.rol?.toLowerCase() === 'anfitrion') {
           <!-- Navegación para anfitriones -->
           <li><a routerLink="/mis-alojamientos" routerLinkActive="active" (click)="closeMobileMenu()">Mis Alojamientos</a></li>
           <li><a routerLink="/crear-alojamiento" routerLinkActive="active" (click)="closeMobileMenu()">Crear Alojamiento</a></li>
@@ -36,8 +36,9 @@
     <div class="auth-section">
       @if (auth.isLoggedIn()) {
         <div class="user-info">
-          <span class="role-badge" [class]="currentUser()?.rol">
-            {{ currentUser()?.rol === 'anfitrion' ? 'Anfitrión' : 'Huésped' }}
+          <span [ngClass]="['role-badge', (currentUser()?.rol || '').toLowerCase()]">
+            {{ currentUser()?.rol?.toLowerCase() === 'anfitrion' ? 'Anfitrión' : 'Huésped' }}
+            <img src="/icons/user.svg" alt="Usuario" width="16" height="16" style="margin-left:6px; vertical-align:middle;" />
           </span>
           <span class="user-name">{{ currentUser()?.nombre }}</span>
         </div>

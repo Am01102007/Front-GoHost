@@ -14,23 +14,35 @@ export interface PaymentMethod {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentMethodsService {
-  private storageKey = 'app_payment_methods';
+  private readonly storageKey = 'app_payment_methods';
 
-  private get storageAvailable(): boolean {
-    try { return typeof window !== 'undefined' && !!window.localStorage; } catch { return false; }
+  /**
+   * Devuelve referencia segura a `localStorage` si está disponible.
+   * Compatible con SSR (puede retornar `null`).
+   */
+  private get storage(): Storage | null {
+    try {
+      const g = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+      return g && 'localStorage' in g ? (g.localStorage as Storage) : null;
+    } catch {
+      return null;
+    }
   }
 
+  /** Lista los métodos de pago persistidos en almacenamiento local */
   list(): PaymentMethod[] {
-    if (!this.storageAvailable) return [];
-    const raw = localStorage.getItem(this.storageKey);
+    const raw = this.storage?.getItem(this.storageKey);
     try { return raw ? JSON.parse(raw) as PaymentMethod[] : []; } catch { return []; }
   }
 
+  /** Persistencia masiva de métodos de pago */
   saveAll(items: PaymentMethod[]) {
-    if (!this.storageAvailable) return;
-    localStorage.setItem(this.storageKey, JSON.stringify(items));
+    try { this.storage?.setItem(this.storageKey, JSON.stringify(items)); } catch {}
   }
 
+  /**
+   * Añade un método de pago. Si el nuevo es `default`, desmarca el resto.
+   */
   add(method: PaymentMethod) {
     const items = this.list();
     if (method.default) items.forEach(m => m.default = false);
@@ -38,10 +50,12 @@ export class PaymentMethodsService {
     this.saveAll(items);
   }
 
+  /** Elimina un método de pago por ID */
   remove(id: string) {
     this.saveAll(this.list().filter(m => m.id !== id));
   }
 
+  /** Marca un método como predeterminado y desmarca los demás */
   setDefault(id: string) {
     const items = this.list().map(m => ({ ...m, default: m.id === id }));
     this.saveAll(items);

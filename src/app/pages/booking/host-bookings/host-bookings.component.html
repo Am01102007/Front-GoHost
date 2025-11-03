@@ -1,0 +1,54 @@
+<section class="host-bookings">
+  <div class="header">
+    <h1>Reservas de mis alojamientos</h1>
+    <p>Administra las reservas asociadas a tus alojamientos</p>
+    <button class="btn-secondary" (click)="testBackendConnection()" style="margin-top: 10px;">
+      🧪 Probar Conexión Backend
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="tab==='todas'" (click)="tab='todas'">
+      Todas
+    </button>
+    <button class="tab" [class.active]="tab==='pendientes'" (click)="tab='pendientes'">
+      Pendientes
+    </button>
+    <button class="tab" [class.active]="tab==='activas'" (click)="tab='activas'">
+      Activas
+    </button>
+    <button class="tab" [class.active]="tab==='canceladas'" (click)="tab='canceladas'">
+      Canceladas
+    </button>
+  </div>
+
+  <div class="content">
+    <div class="empty" *ngIf="items.length === 0">
+      <img src="/icons/calendar.svg" alt="Reservas" width="64" height="64" />
+      <h3>No hay reservas para mostrar</h3>
+      <p>Cuando recibas solicitudes o confirmaciones, aparecerán aquí.</p>
+      <a routerLink="/mis-alojamientos" class="btn-primary">Ir a mis alojamientos</a>
+    </div>
+
+    <div class="list" *ngIf="items.length > 0">
+      <div class="booking" *ngFor="let b of items">
+        <div class="left">
+          <div class="thumb">
+            <img [src]="b.listing?.fotoPrincipal || '/images/placeholder.jpg'" alt="Alojamiento" />
+          </div>
+          <div class="info">
+            <h3>{{ b.listing?.titulo || 'Alojamiento' }}</h3>
+            <p class="dates">{{ b.fechaInicio }} → {{ b.fechaFin }}</p>
+            <p class="meta">Huéspedes: {{ b.huespedes }} · Estado: {{ b.estado }}</p>
+          </div>
+        </div>
+        <div class="right">
+          <a [routerLink]="['/alojamientos', b.listingId]" class="btn">Ver alojamiento</a>
+          <a [routerLink]="['/reserva', b.id]" class="btn">Ver detalle</a>
+          <button class="btn success" *ngIf="b.estado === 'pendiente'" (click)="aceptar(b.id)">Aceptar</button>
+          <button class="btn danger" *ngIf="b.estado === 'pendiente'" (click)="rechazar(b.id)">Rechazar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

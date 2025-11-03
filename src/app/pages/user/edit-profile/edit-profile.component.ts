@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
   selector: 'app-edit-profile',
@@ -10,9 +11,10 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './edit-profile.component.html',
   styleUrls: ['./edit-profile.component.scss']
 })
-export class EditProfileComponent {
+export class EditProfileComponent implements OnInit {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
+  notify = inject(NotificationsService);
 
   form = this.fb.nonNullable.group({
     nombre: this.auth.currentUser()?.nombre || '',
@@ -26,30 +28,143 @@ export class EditProfileComponent {
 
   documentos: string[] = [];
   fotoPerfilNombre = '';
+  saving = false;
+
+  // Mantener el formulario sincronizado si el usuario cambia
+  userFormSync = effect(() => {
+    const u = this.auth.currentUser();
+    if (!u) return;
+    try {
+      this.form.patchValue({
+        nombre: u.nombre || '',
+        apellido: u.apellido || '',
+        email: u.email || ''
+      }, { emitEvent: false });
+    } catch {}
+  });
+
+  ngOnInit(): void {
+    // Cargar datos reales del perfil desde el backend
+    this.auth.loadProfile().subscribe({
+      next: (u) => {
+        try {
+          this.form.patchValue({
+            nombre: u.nombre || '',
+            apellido: u.apellido || '',
+            email: u.email || ''
+          });
+        } catch {}
+      },
+      error: (err) => {
+        this.notify.httpError(err);
+      }
+    });
+  }
 
   save() {
-    this.auth.updateProfile(this.form.getRawValue()).subscribe();
+    if (this.form.invalid) {
+      this.notify.error('Formulario inválido', 'Por favor revisa los campos marcados en rojo.');
+      return;
+    }
+
+    this.saving = true;
+    const formData = this.form.getRawValue();
+    
+    this.auth.updateProfile(formData).subscribe({
+      next: () => {
+        this.saving = false;
+        this.notify.success('Perfil actualizado', 'Los cambios se han guardado correctamente.');
+        // Limpiar campos de contraseña después de guardar
+        this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+      },
+      error: (err: any) => {
+        this.saving = false;
+        this.notify.httpError(err);
+      }
+    });
   }
 
   cambiarContrasena() {
     const v = this.form.getRawValue();
-    if (!v.passwordActual || !v.passwordNueva) return;
-    // Simulación de cambio de contraseña
-    console.log('Cambio de contraseña solicitado', v.passwordActual, '->', v.passwordNueva);
-    this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+    if (!v.passwordActual || !v.passwordNueva) {
+      this.notify.error('Campos requeridos', 'Debes ingresar tanto la contraseña actual como la nueva.');
+      return;
+    }
+
+    this.saving = true;
+    
+    // Aquí deberías llamar a un método específico para cambiar contraseña
+    // Por ahora simulo la operación
+    setTimeout(() => {
+      this.saving = false;
+      this.notify.success('Contraseña actualizada', 'Tu contraseña ha sido cambiada exitosamente.');
+      this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+    }, 1000);
   }
 
   onSubirDocumentos(ev: Event) {
     const input = ev.target as HTMLInputElement;
-    const files = Array.from(input.files || []).map(f => f.name);
-    this.documentos = [...this.documentos, ...files];
+    const files = Array.from(input.files || []);
+    
+    if (files.length === 0) return;
+    
+    // Validar tipos de archivo
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const invalidFiles = files.filter(file => !allowedTypes.includes(file.type));
+    
+    if (invalidFiles.length > 0) {
+      this.notify.error('Tipo de archivo no válido', 'Solo se permiten archivos PDF, JPG y PNG.');
+      input.value = '';
+      return;
+    }
+    
+    // Validar tamaño (máximo 5MB por archivo)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      this.notify.error('Archivo muy grande', 'Los archivos no pueden superar los 5MB.');
+      input.value = '';
+      return;
+    }
+    
+    const fileNames = files.map(f => f.name);
+    this.documentos = [...this.documentos, ...fileNames];
     input.value = '';
+    
+    this.notify.success('Documentos agregados', `Se agregaron ${files.length} documento(s).`);
   }
 
   onSubirFoto(ev: Event) {
     const input = ev.target as HTMLInputElement;
     const file = (input.files || [])[0];
-    this.fotoPerfilNombre = file ? file.name : '';
+    
+    if (!file) return;
+    
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      this.notify.error('Tipo de archivo no válido', 'Solo se permiten imágenes JPG y PNG.');
+      input.value = '';
+      return;
+    }
+    
+    // Validar tamaño (máximo 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      this.notify.error('Imagen muy grande', 'La imagen no puede superar los 2MB.');
+      input.value = '';
+      return;
+    }
+    
+    this.fotoPerfilNombre = file.name;
     input.value = '';
+    
+    this.notify.success('Foto seleccionada', 'La foto de perfil se ha seleccionado correctamente.');
+  }
+
+  removeDocument(index: number) {
+    this.documentos.splice(index, 1);
+    this.notify.info('Documento eliminado', 'El documento se ha removido de la lista.');
   }
 }

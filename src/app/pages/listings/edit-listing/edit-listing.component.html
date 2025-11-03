@@ -1,0 +1,16 @@
+<h2>Editar alojamiento</h2>
+<form [formGroup]="form" (ngSubmit)="guardar()" class="form">
+  <label>Título<input formControlName="titulo" /></label>
+  <label>Descripción<textarea formControlName="descripcion"></textarea></label>
+  <label>Dirección<input formControlName="direccion" /></label>
+  <label>Ciudad<input formControlName="ciudad" /></label>
+  <label>País<input formControlName="pais" /></label>
+  <label>Precio por noche<input type="number" formControlName="precioPorNoche" /></label>
+  <label>Capacidad<input type="number" formControlName="capacidad" /></label>
+  <label>Nueva foto principal<input type="file" (change)="onFileSelected($event)" accept="image/*" /></label>
+  <div *ngIf="photoPreview" class="photo-preview" style="margin:8px 0;">
+    <img [src]="photoPreview" alt="Vista previa" style="max-width: 100%; height: auto; border-radius: 6px;" />
+  </div>
+  <button type="submit" class="btn btn-primary" [disabled]="form.invalid || uploading">Guardar</button>
+</form>
+

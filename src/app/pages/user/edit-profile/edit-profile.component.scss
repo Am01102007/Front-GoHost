@@ -6,9 +6,6 @@
 input,textarea{border:1px solid #d1d5db;border-radius:10px;padding:10px}
 .foto{display:grid;gap:10px;justify-items:center}
 .avatar img{width:180px;height:180px;opacity:.9}
-.btn{background:#9b59b6;color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
-.btn.ghost{background:#fff;color:#9b59b6;border:2px solid #9b59b6}
-.btn.primary{background:#9b59b6}
 .guardar-row{grid-column:1/-1;margin-top:8px}
 .ancho{width:100%;border-radius:12px}
 .file{display:inline-grid;gap:6px;align-items:center}

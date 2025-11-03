@@ -1,0 +1,20 @@
+.booking-detail {
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .summary {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .thumb img { width: 160px; height: 120px; object-fit: cover; border-radius: 8px; }
+  .chip { padding: 4px 8px; border-radius: 999px; background: #eee; }
+  .chip.pending { background: #fff3cd; }
+  .chip.paid { background: #d1e7dd; }
+  .chip.cancelled { background: #f8d7da; }
+  .actions { margin-top: 16px; display: flex; gap: 8px; }
+}
+

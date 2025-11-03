@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BookingsService } from '../../../core/services/bookings.service';
@@ -12,12 +12,16 @@ import { ListingsService } from '../../../core/services/listings.service';
   templateUrl: './booking-history.component.html',
   styleUrls: ['./booking-history.component.scss']
 })
-export class BookingHistoryComponent {
+export class BookingHistoryComponent implements OnInit {
   bookingsSvc = inject(BookingsService);
   auth = inject(AuthService);
   listings = inject(ListingsService);
 
   filter: 'todas' | 'completadas' | 'proximas' = 'todas';
+
+  ngOnInit() {
+    this.bookingsSvc.fetchMine().subscribe();
+  }
 
   get allBookings() {
     const uid = this.auth.currentUser()?.id;

@@ -13,7 +13,7 @@ export interface Listing {
   imagenes: string[];
   servicios: string[];
   calificacionPromedio?: number;
-  numeroResenas?: number;
+  numeroReseñas?: number;
   anfitrionId: string;
   anfitrionNombre?: string;
   disponibleDesde?: string;

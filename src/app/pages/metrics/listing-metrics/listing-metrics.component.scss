@@ -1,0 +1,8 @@
+.metrics{display:grid;gap:16px}
+.header{display:flex;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.card h3{margin:0 0 8px 0;color:#374151;font-size:16px}
+.big{font-size:24px;font-weight:700;color:#1f2937}
+.loading{color:#6b7280}
+

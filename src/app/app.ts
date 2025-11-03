@@ -9,7 +9,9 @@ import { NavbarComponent } from './shared/components/navbar/navbar.component';
   template: `
     <app-navbar />
     <main class="page-container">
-      <router-outlet />
+      <div class="main-container">
+        <router-outlet />
+      </div>
     </main>
   `,
 })

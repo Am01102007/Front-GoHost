@@ -12,8 +12,12 @@
   <app-root></app-root>
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
   <script>
-    // Reemplaza por tu token de Mapbox
-    window.MAPBOX_TOKEN = '';
+    // Configura el token público de Mapbox (pk.*) y persiste en localStorage
+    (function(){
+      var token = 'pk.eyJ1Ijoic2hpcm9lMDkiLCJhIjoiY21oZnhxeGN4MGF5ZjJzb255bzF2c3dtNyJ9.-rraWV4fF0fUWKavgpCc-A';
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('MAPBOX_TOKEN', token); } catch {}
+      window.MAPBOX_TOKEN = token;
+    })();
   </script>
 </body>
 </html>

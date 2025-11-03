@@ -10,14 +10,31 @@ export interface CommentItem {
   createdAt: string; // ISO
 }
 
+/**
+ * Servicio de comentarios (persistencia local).
+ *
+ * Almacena y recupera comentarios en `localStorage`. No interactúa con el backend;
+ * útil como demostración y para pruebas locales.
+ */
 @Injectable({ providedIn: 'root' })
 export class CommentsService {
+  private readonly storageKey = 'comments';
   private items = signal<CommentItem[]>(this.restore());
 
+  /**
+   * Lista comentarios asociados a un alojamiento.
+   * @param listingId ID del alojamiento.
+   */
   listByListing(listingId: string): CommentItem[] {
     return this.items().filter(c => c.listingId === listingId);
   }
 
+  /**
+   * Añade un comentario y lo persiste en almacenamiento local.
+   * @param listingId ID del alojamiento.
+   * @param data Contenido del comentario y calificación.
+   * @returns El comentario creado.
+   */
   add(listingId: string, data: { text: string; rating: number; user?: string }): CommentItem {
     const item: CommentItem = {
       id: uuidv4(),
@@ -33,18 +50,18 @@ export class CommentsService {
     return item;
   }
 
-  private hasStorage(): boolean {
+  private get storage(): Storage | null {
     try {
-      return typeof window !== 'undefined' && !!window.localStorage;
+      const g = typeof globalThis !== 'undefined' ? (globalThis as any) : undefined;
+      return g && 'localStorage' in g ? (g.localStorage as Storage) : null;
     } catch {
-      return false;
+      return null;
     }
   }
 
   private restore(): CommentItem[] {
-    if (!this.hasStorage()) return [];
     try {
-      const raw = localStorage.getItem('comments');
+      const raw = this.storage?.getItem(this.storageKey);
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
@@ -52,10 +69,8 @@ export class CommentsService {
   }
 
   private persist(items: CommentItem[]): void {
-    if (!this.hasStorage()) return;
     try {
-      localStorage.setItem('comments', JSON.stringify(items));
+      this.storage?.setItem(this.storageKey, JSON.stringify(items));
     } catch {}
   }
 }
-
