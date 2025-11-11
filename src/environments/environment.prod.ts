@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api'
+  // Llamadas directas al backend en producción
+  apiUrl: 'https://backend-gohost-production.up.railway.app'
 };

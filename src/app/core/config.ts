@@ -2,8 +2,8 @@
  * Configuración central del backend.
  *
  * `API_BASE` define el prefijo para todas las llamadas HTTP.
- * Usar una ruta relativa (`/api`) permite que el servidor SSR actúe
- * como proxy hacia el backend, evitando CORS en desarrollo y producción.
+ * Primero usa el valor runtime inyectado por `/env.js` (window.__ENV__.API_BASE_URL).
+ * Si no existe, usa el `environment.apiUrl` (que en producción apunta directo al backend).
  */
-// Permite sobreescribir vía script runtime /env.js (window.__ENV__.API_BASE_URL)
-export const API_BASE = (globalThis as any).__ENV__?.API_BASE_URL ?? '/api';
+import { environment } from '../../environments/environment';
+export const API_BASE = (globalThis as any).__ENV__?.API_BASE_URL ?? environment.apiUrl;
