@@ -24,13 +24,13 @@ const angularApp = new AngularNodeAppEngine();
 
 /**
  * Proxy de API: reenvía todas las peticiones que comienzan con /api.
- * En desarrollo, se envía al proxy simple con mocks en http://localhost:4004
+ * En desarrollo, se envía al backend en http://localhost:8081
  * para evitar 502 cuando el backend no está disponible.
  * Debe estar registrado ANTES de los handlers de estáticos y SSR.
  */
 app.use('/api', (req, res) => {
   // Permite configurar el destino vía variable de entorno; por defecto usar el proxy simple.
-  const API_TARGET = process.env['API_TARGET'] || 'http://localhost:4004';
+  const API_TARGET = process.env['API_TARGET'] || 'http://localhost:8081';
   const targetUrl = `${API_TARGET}${req.originalUrl}`;
 
   const method = req.method;

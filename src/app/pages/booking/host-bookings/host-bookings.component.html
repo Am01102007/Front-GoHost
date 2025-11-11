@@ -34,7 +34,7 @@
       <div class="booking" *ngFor="let b of items">
         <div class="left">
           <div class="thumb">
-            <img [src]="b.listing?.fotoPrincipal || '/images/placeholder.jpg'" alt="Alojamiento" />
+            <img [src]="b.listing?.imagenes?.[0] || '/images/placeholder.jpg'" alt="Alojamiento" />
           </div>
           <div class="info">
             <h3>{{ b.listing?.titulo || 'Alojamiento' }}</h3>

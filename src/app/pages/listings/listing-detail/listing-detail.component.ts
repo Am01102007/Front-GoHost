@@ -1,10 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ListingsService } from '../../../core/services/listings.service';
 import { CommentsSectionComponent } from '../../../shared/components/comments-section/comments-section.component';
 import { MapService } from '../../../core/services/map.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-listing-detail',
@@ -13,7 +14,7 @@ import { NotificationsService } from '../../../core/services/notifications.servi
   templateUrl: './listing-detail.component.html',
   styleUrls: ['./listing-detail.component.scss']
 })
-export class ListingDetailComponent implements OnInit {
+export class ListingDetailComponent implements OnInit, AfterViewInit {
   /** Servicio de rutas y parámetros de la URL */
   route = inject(ActivatedRoute);
   /** Servicio de alojamientos (carga y cache local) */
@@ -22,6 +23,8 @@ export class ListingDetailComponent implements OnInit {
   mapSvc = inject(MapService);
   /** Servicio de notificaciones UI */
   notifications = inject(NotificationsService);
+  /** Servicio de autenticación para control de roles */
+  auth = inject(AuthService);
   /** Alojamiento a mostrar; puede resolver por ruta o por ID */
   listing = (this.route.snapshot.data['listing'] as any) || this.listingsSvc.getById(this.route.snapshot.params['id']);
   private map: any | null = null;
@@ -31,6 +34,7 @@ export class ListingDetailComponent implements OnInit {
   userOrigin: { lng: number; lat: number } | null = null;
   routeEnabled = false;
   terrainEnabled = false;
+  @ViewChild('commentsRef') commentsRef?: CommentsSectionComponent;
 
   ngOnInit() {
     const id = this.route.snapshot.params['id'];
@@ -50,6 +54,18 @@ export class ListingDetailComponent implements OnInit {
     } else {
       this.initMap();
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Abrir comentarios automáticamente si viene indicado por query param
+    try {
+      const qp = this.route.snapshot.queryParamMap;
+      const shouldOpen = qp.get('openComments');
+      if (shouldOpen && this.commentsRef) {
+        // Pequeño delay para asegurar que el componente está listo
+        setTimeout(() => this.commentsRef!.toggle(), 0);
+      }
+    } catch {}
   }
 
   /**

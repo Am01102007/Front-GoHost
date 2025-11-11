@@ -16,19 +16,29 @@ const USE_MOCKS = String(process.env.USE_MOCKS ?? 'true').toLowerCase() !== 'fal
 app.get('/', (req, res) => res.status(200).send('ok'));
 app.get('/actuator/health', (req, res) => res.json({ status: 'UP' }));
 
-const TARGET = process.env.TARGET || 'http://127.0.0.1:8080';
+const TARGET = process.env.TARGET || 'http://127.0.0.1:8081';
 console.log(`[proxy] Target backend: ${TARGET}`);
 
 /**
  * Construye una respuesta mock si el backend no está disponible.
  * Devuelve null si la ruta no está soportada por los mocks.
  */
-function buildMock(req) {
+function buildMock(req, bodyBuffer) {
   const u = new URL(req.originalUrl, 'http://localhost');
   const pathname = u.pathname;
   const method = req.method.toUpperCase();
   // Soportar rutas con y sin prefijo '/api'
   const path = pathname.startsWith('/api/') ? pathname : `/api${pathname.startsWith('/') ? '' : '/'}${pathname}`;
+
+  // Intentar parsear cuerpo JSON si aplica
+  let bodyJson = null;
+  try {
+    const ct = String(req.headers['content-type'] || '');
+    if (bodyBuffer && ct.includes('application/json')) {
+      const text = Buffer.isBuffer(bodyBuffer) ? bodyBuffer.toString('utf8') : String(bodyBuffer || '');
+      if (text) bodyJson = JSON.parse(text);
+    }
+  } catch {}
 
   // Mock de listings paginados
   if (path === '/api/alojamientos' && method === 'GET') {
@@ -216,6 +226,207 @@ function buildMock(req) {
     };
   }
 
+  // Listings del anfitrión autenticado
+  if (path === '/api/alojamientos/anfitrion' && method === 'GET') {
+    const page = Number(u.searchParams.get('page') ?? 0);
+    const size = Number(u.searchParams.get('size') ?? 12);
+    const content = [
+      {
+        id: 10,
+        titulo: 'Loft moderno en el centro',
+        descripcion: 'Ideal para estancias cortas, cerca de todo.',
+        calle: 'Calle 7 #45-12',
+        ciudad: 'Bogotá',
+        pais: 'Colombia',
+        zip: '110111',
+        latitud: 4.711,
+        longitud: -74.0721,
+        precioNoche: 120,
+        fotos: ['/icons/icon-512x512.png'],
+        servicios: ['WiFi', 'Cocina'],
+        capacidad: 2
+      },
+      {
+        id: 11,
+        titulo: 'Casa campestre con vista',
+        descripcion: 'Perfecta para desconectar y disfrutar de la naturaleza.',
+        calle: 'Vereda El Retiro km 3',
+        ciudad: 'Medellín',
+        pais: 'Colombia',
+        zip: '050001',
+        latitud: 6.2442,
+        longitud: -75.5812,
+        precioNoche: 220,
+        fotos: ['/icons/icon-512x512.png'],
+        servicios: ['Estacionamiento', 'Balcón'],
+        capacidad: 6
+      }
+    ];
+    return {
+      status: 200,
+      body: { content, totalElements: content.length, totalPages: 1, size, number: page }
+    };
+  }
+
+  // Reservas del anfitrión autenticado
+  if (path === '/api/reservas/anfitrion' && method === 'GET') {
+    const page = Number(u.searchParams.get('page') ?? 0);
+    const size = Number(u.searchParams.get('size') ?? 10);
+    const content = [
+      {
+        id: 501,
+        alojamientoId: 10,
+        huespedId: 2001,
+        checkIn: '2025-10-01',
+        checkOut: '2025-10-05',
+        numeroHuespedes: 2,
+        estado: 'CONFIRMADA'
+      },
+      {
+        id: 502,
+        alojamientoId: 11,
+        huespedId: 2002,
+        checkIn: '2025-12-12',
+        checkOut: '2025-12-15',
+        numeroHuespedes: 4,
+        estado: 'PENDIENTE'
+      },
+      {
+        id: 503,
+        alojamientoId: 10,
+        huespedId: 2003,
+        checkIn: '2025-09-10',
+        checkOut: '2025-09-12',
+        numeroHuespedes: 1,
+        estado: 'CANCELADA'
+      }
+    ];
+    return {
+      status: 200,
+      body: { content, totalElements: content.length, totalPages: 1, size, number: page }
+    };
+  }
+
+  // Reservas por alojamiento específico
+  if (method === 'GET') {
+    const m = path.match(/^\/api\/reservas\/alojamiento\/(\d+)/);
+    if (m) {
+      const alojamientoId = Number(m[1]);
+      const page = Number(u.searchParams.get('page') ?? 0);
+      const size = Number(u.searchParams.get('size') ?? 10);
+      const content = [
+        {
+          id: 601,
+          alojamientoId,
+          huespedId: 2101,
+          checkIn: '2025-08-01',
+          checkOut: '2025-08-03',
+          numeroHuespedes: 2,
+          estado: 'CONFIRMADA'
+        },
+        {
+          id: 602,
+          alojamientoId,
+          huespedId: 2102,
+          checkIn: '2025-11-20',
+          checkOut: '2025-11-22',
+          numeroHuespedes: 3,
+          estado: 'PENDIENTE'
+        }
+      ];
+      return {
+        status: 200,
+        body: { content, totalElements: content.length, totalPages: 1, size, number: page }
+      };
+    }
+  }
+
+  // Actualización de estado de reserva (PATCH)
+  if (method === 'PATCH') {
+    const m = path.match(/^\/api\/reservas\/(\d+)/);
+    if (m) {
+      const id = Number(m[1]);
+      const estado = String(bodyJson?.estado || '').toUpperCase();
+      const normalized = ['PENDIENTE', 'CONFIRMADA', 'CANCELADA'].includes(estado) ? estado : 'CONFIRMADA';
+      const sample = {
+        id,
+        alojamientoId: 10,
+        huespedId: 2001,
+        checkIn: '2025-10-01',
+        checkOut: '2025-10-05',
+        numeroHuespedes: 2,
+        estado: normalized
+      };
+      return { status: 200, body: sample };
+    }
+  }
+
+  // Cancelación de reserva
+  if (method === 'POST') {
+    const m = path.match(/^\/api\/reservas\/(\d+)\/cancelar$/);
+    if (m) {
+      const id = Number(m[1]);
+      return { status: 200, body: { id, ok: true } };
+    }
+  }
+
+  // Perfil de usuario actual
+  if (path === '/api/usuarios/me' && method === 'GET') {
+    const body = {
+      id: '1001',
+      email: 'user@example.com',
+      nombre: 'Usuario',
+      apellido: 'Demo',
+      telefono: '+57 300 000 0000',
+      rol: 'ANFITRION',
+      avatarUrl: ''
+    };
+    return { status: 200, body };
+  }
+
+  if (path === '/api/usuarios/me' && method === 'PATCH') {
+    const current = {
+      id: '1001',
+      email: 'user@example.com',
+      nombre: 'Usuario',
+      apellido: 'Demo',
+      telefono: '+57 300 000 0000',
+      rol: 'ANFITRION',
+      avatarUrl: ''
+    };
+    const merged = { ...current, ...(bodyJson || {}) };
+    return { status: 200, body: merged };
+  }
+
+  // Métricas
+  if (method === 'GET') {
+    const m1 = path.match(/^\/api\/alojamientos\/(\d+)\/metricas$/);
+    if (m1) {
+      const id = Number(m1[1]);
+      const body = {
+        titulo: `Alojamiento #${id}`,
+        promedioCalificacion: 4.3,
+        totalReservas: 28,
+        reservasCompletadas: 22,
+        reservasCanceladas: 6,
+        ingresosTotales: 5400
+      };
+      return { status: 200, body };
+    }
+  }
+
+  if (path === '/api/alojamientos/metricas' && method === 'GET') {
+    const list = [10, 11].map(id => ({
+      titulo: `Alojamiento #${id}`,
+      promedioCalificacion: id === 10 ? 4.5 : 4.1,
+      totalReservas: id === 10 ? 30 : 18,
+      reservasCompletadas: id === 10 ? 24 : 12,
+      reservasCanceladas: id === 10 ? 6 : 6,
+      ingresosTotales: id === 10 ? 6200 : 3800
+    }));
+    return { status: 200, body: list };
+  }
+
   return null;
 }
 
@@ -244,7 +455,7 @@ app.use('/api', (req, res) => {
         : (bodyBuffer.length ? bodyBuffer : undefined);
 
       // Responder con mock si la ruta está soportada y los mocks están habilitados
-      const preMock = USE_MOCKS ? buildMock(req) : null;
+      const preMock = USE_MOCKS ? buildMock(req, body) : null;
       if (preMock) {
         res.status(preMock.status).setHeader('Content-Type', 'application/json');
         return res.send(JSON.stringify(preMock.body));
@@ -282,7 +493,7 @@ app.use('/api', (req, res) => {
           cause: err?.cause?.message ?? String(err?.cause ?? ''),
         });
         // Intentar responder con datos mock si la ruta está soportada
-        const mock = USE_MOCKS ? buildMock(req) : null;
+        const mock = USE_MOCKS ? buildMock(req, body) : null;
         if (mock) {
           res.status(mock.status).setHeader('Content-Type', 'application/json');
           return res.send(JSON.stringify(mock.body));

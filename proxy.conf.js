@@ -1,13 +1,13 @@
 const PROXY_CONFIG = [
   {
     context: ['/api/**'],
-    target: 'http://127.0.0.1:8080',
+    target: 'http://localhost:8081',
     secure: false,
     changeOrigin: true,
     logLevel: 'debug',
     onProxyReq: function(proxyReq, req, res) {
       console.log('Proxying request to:', proxyReq.path);
-      console.log('Target:', 'http://127.0.0.1:8080');
+      console.log('Target:', 'http://localhost:8081');
     },
     onError: function(err, req, res) {
       console.log('Proxy error:', err);

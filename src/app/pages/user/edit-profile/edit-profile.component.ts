@@ -92,14 +92,17 @@ export class EditProfileComponent implements OnInit {
     }
 
     this.saving = true;
-    
-    // Aquí deberías llamar a un método específico para cambiar contraseña
-    // Por ahora simulo la operación
-    setTimeout(() => {
-      this.saving = false;
-      this.notify.success('Contraseña actualizada', 'Tu contraseña ha sido cambiada exitosamente.');
-      this.form.patchValue({ passwordActual: '', passwordNueva: '' });
-    }, 1000);
+    this.auth.changePassword(v.passwordActual, v.passwordNueva).subscribe({
+      next: () => {
+        this.saving = false;
+        this.notify.success('Contraseña actualizada', 'Tu contraseña ha sido cambiada exitosamente.');
+        this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+      },
+      error: (err) => {
+        this.saving = false;
+        this.notify.httpError(err);
+      }
+    });
   }
 
   onSubirDocumentos(ev: Event) {

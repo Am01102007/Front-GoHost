@@ -27,8 +27,8 @@ export class MyBookingsComponent implements OnInit {
   }
 
   get items() {
-    const uid = this.auth.currentUser()?.id;
-    return uid ? this.bookingsSvc.byUser(uid) : [];
+    // Usar el computed del servicio que ya filtra por usuario actual
+    return this.bookingsSvc.myBookings();
   }
 
   get activas() {

@@ -69,10 +69,9 @@ export class BookingsService {
    * Se recalcula automáticamente cuando cambian las reservas.
    */
   readonly myBookings = computed(() => {
-    return this.bookings().filter(booking => 
-      // Filtrar por usuario actual si está disponible
-      true // TODO: Implementar filtro por usuario actual
-    );
+    const uid = this.auth.currentUser?.()?.id;
+    if (!uid) return [] as Booking[];
+    return this.bookings().filter(booking => booking.userId === uid);
   });
 
   /**

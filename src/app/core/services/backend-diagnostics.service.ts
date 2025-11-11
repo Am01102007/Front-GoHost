@@ -34,12 +34,22 @@ export class BackendDiagnosticsService {
   /** Ejecuta health check y endpoints clave (público y protegido). */
   runChecks() {
     const t0 = Date.now();
-    const health$ = this.probe('Health', '/actuator/health');
+    // Usamos un endpoint público existente como "health" efectivo
+    const health$ = this.probe('Health', '/api/alojamientos?page=0&size=1');
     const listings$ = this.probe('Alojamientos', '/api/alojamientos');
     const bookingsMine$ = this.probe('Reservas propias', '/api/reservas/mias');
 
     return forkJoin([health$, listings$, bookingsMine$]).pipe(
-      map(results => ({ results, totalMs: Date.now() - t0 }))
+      map(results => {
+        // Tratamos 401 en endpoint protegido como estado esperado si no hay sesión
+        const normalized = results.map(r => {
+          if (r.name === 'Reservas propias' && r.status === 401) {
+            return { ...r, ok: true, detail: 'Auth requerida (no iniciada)' };
+          }
+          return r;
+        });
+        return { results: normalized, totalMs: Date.now() - t0 };
+      })
     );
   }
 
