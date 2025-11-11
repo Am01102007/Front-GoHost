@@ -45,10 +45,10 @@ export class BackendDiagnosticsService {
   /** Ejecuta health check y endpoints clave (público y protegido). */
   runChecks() {
     const t0 = Date.now();
-    // Usamos un endpoint público existente como "health" efectivo
-    const health$ = this.probe('Health', '/api/alojamientos?page=0&size=1');
-    const listings$ = this.probe('Alojamientos', '/api/alojamientos');
-    const bookingsMine$ = this.probe('Reservas propias', '/api/reservas/mias');
+    // Usamos API_BASE (inyectado vía /env.js) para hacer llamadas directas al backend
+    const health$ = this.probe('Health', `${API_BASE}/alojamientos?page=0&size=1`);
+    const listings$ = this.probe('Alojamientos', `${API_BASE}/alojamientos`);
+    const bookingsMine$ = this.probe('Reservas propias', `${API_BASE}/reservas/mias`);
 
     return forkJoin([health$, listings$, bookingsMine$]).pipe(
       map(results => {
