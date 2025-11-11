@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed, signal, effect } from '@angular/core';
+import { Component, inject, OnInit, computed, signal, effect, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ListingsService } from '../../../core/services/listings.service';
@@ -40,6 +40,10 @@ export class BrowseListingsComponent implements OnInit {
   readonly numPersonas = signal<number | undefined>(undefined);
   readonly servicios = signal('');
   readonly hasSearched = signal(false);
+  // Estado del desplegable de servicios para mejor usabilidad en móvil/desktop
+  readonly servicesOpen = signal(false);
+  @ViewChild('servicesContainer') servicesContainer?: ElementRef<HTMLElement>;
+  @ViewChild('servicesInput') servicesInput?: ElementRef<HTMLInputElement>;
 
   // Lista de servicios comunes para autocompletado
   readonly serviciosComunes = [
@@ -233,6 +237,9 @@ export class BrowseListingsComponent implements OnInit {
     }
     
     console.log(`🏷️ Servicio agregado: ${servicio}`);
+    // Mantener abierto para seleccionar múltiples servicios y devolver foco al input
+    this.servicesOpen.set(true);
+    this.servicesInput?.nativeElement.focus();
   }
 
   /**
@@ -264,6 +271,37 @@ export class BrowseListingsComponent implements OnInit {
   }
 
   /**
+   * Controla apertura/cierre del selector de servicios
+   */
+  openServices(): void {
+    this.servicesOpen.set(true);
+  }
+
+  closeServices(): void {
+    // pequeño retraso para permitir clic en opción sin cerrar antes
+    setTimeout(() => this.servicesOpen.set(false), 150);
+  }
+
+  // Cierra al hacer clic fuera del contenedor de servicios
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.servicesOpen()) return;
+    const target = event.target as Node;
+    const container = this.servicesContainer?.nativeElement;
+    if (container && !container.contains(target)) {
+      this.servicesOpen.set(false);
+    }
+  }
+
+  // Cierra con tecla Escape
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.servicesOpen()) {
+      this.servicesOpen.set(false);
+    }
+  }
+
+  /**
    * Refresca los datos desde el servidor
    */
   refreshData(): void {
@@ -287,4 +325,3 @@ export class BrowseListingsComponent implements OnInit {
     });
   }
 }
-

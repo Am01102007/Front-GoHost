@@ -32,16 +32,23 @@
         [disabled]="loading()"
       >
       <span class="divider">|</span>
-      <div class="services-input-container">
+      <div class="services-input-container" #servicesContainer>
         <input 
           [value]="servicios()" 
           (input)="updateServicios($event.target.value)"
           placeholder="Servicios (ej: WiFi, Piscina)" 
           class="search-input services-input"
           (keydown)="onEnterKey($event)"
+          (focus)="openServices()"
+          (click)="openServices()"
+          (blur)="closeServices()"
           [disabled]="loading()"
+          #servicesInput
         >
-        <div class="services-dropdown" *ngIf="!loading()">
+        <div class="services-dropdown" [class.open]="servicesOpen()" *ngIf="!loading()">
+          <div class="dropdown-header">
+            <button type="button" class="close-dropdown" (click)="closeServices()" title="Cerrar">✕ Cerrar</button>
+          </div>
           <div class="services-grid">
             <button 
               type="button" 
