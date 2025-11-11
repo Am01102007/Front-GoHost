@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { BACKEND_URL } from '../../shared/config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = environment.apiUrl;
+  // Preferir BACKEND_URL si está definido; de lo contrario, usar environment.apiUrl
+  private baseUrl = BACKEND_URL || environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

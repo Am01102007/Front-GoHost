@@ -16,7 +16,7 @@ const USE_MOCKS = String(process.env.USE_MOCKS ?? 'true').toLowerCase() !== 'fal
 app.get('/', (req, res) => res.status(200).send('ok'));
 app.get('/actuator/health', (req, res) => res.json({ status: 'UP' }));
 
-const TARGET = process.env.TARGET || 'http://127.0.0.1:8081';
+const TARGET = process.env.TARGET || 'http://127.0.0.1:8080';
 console.log(`[proxy] Target backend: ${TARGET}`);
 
 /**

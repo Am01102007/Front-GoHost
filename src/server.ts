@@ -29,8 +29,11 @@ const angularApp = new AngularNodeAppEngine();
  * Debe estar registrado ANTES de los handlers de estáticos y SSR.
  */
 app.use('/api', (req, res) => {
-  // Permite configurar el destino vía variable de entorno; por defecto usar el proxy simple.
-  const API_TARGET = process.env['API_TARGET'] || 'http://localhost:8081';
+  // Permite configurar el destino vía variable de entorno, compatible con Vite/CRA.
+  const API_TARGET = process.env['API_TARGET']
+    || process.env['VITE_API_BASE_URL']
+    || process.env['REACT_APP_API_BASE_URL']
+    || 'http://localhost:8081';
   const targetUrl = `${API_TARGET}${req.originalUrl}`;
 
   const method = req.method;
@@ -125,6 +128,20 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Endpoint de configuración runtime: /env.js
+ * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
+ */
+app.get('/env.js', (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  const apiBaseUrl = process.env['API_TARGET']
+    || process.env['VITE_API_BASE_URL']
+    || process.env['REACT_APP_API_BASE_URL']
+    || '/api';
+  const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, { API_BASE_URL: '${apiBaseUrl}' });`;
+  res.send(payload);
+});
 
 /**
  * Handle all other requests by rendering the Angular application.
