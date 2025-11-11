@@ -22,6 +22,20 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
+// Resuelve el destino del backend para el proxy de API.
+// En producción (Railway), usa el dominio público del backend;
+// en desarrollo, apunta a localhost.
+function resolveApiTarget(): string {
+  const envTarget = process.env['API_TARGET']
+    || process.env['VITE_API_BASE_URL']
+    || process.env['REACT_APP_API_BASE_URL'];
+  if (envTarget) return envTarget;
+  const fallback = process.env['NODE_ENV'] === 'production'
+    ? 'https://backend-gohost-production.up.railway.app'
+    : 'http://127.0.0.1:8081';
+  return fallback;
+}
+
 /**
  * Proxy de API: reenvía todas las peticiones que comienzan con /api.
  * En desarrollo, se envía al backend en http://localhost:8081
@@ -29,19 +43,8 @@ const angularApp = new AngularNodeAppEngine();
  * Debe estar registrado ANTES de los handlers de estáticos y SSR.
  */
 app.use('/api', (req, res) => {
-  // Permite configurar el destino vía variable de entorno, compatible con Vite/CRA.
-  const API_TARGET = process.env['API_TARGET']
-    || process.env['VITE_API_BASE_URL']
-    || process.env['REACT_APP_API_BASE_URL'];
-
-  // Si no hay destino configurado, devolver 503 con explicación clara.
-  if (!API_TARGET) {
-    res.status(503).json({
-      error: 'Service Unavailable',
-      detail: 'API target no configurado. Define API_TARGET (o VITE_API_BASE_URL / REACT_APP_API_BASE_URL) en Railway.',
-    });
-    return;
-  }
+  // Resuelve el destino vía variable de entorno, con fallback sensible.
+  const API_TARGET = resolveApiTarget();
 
   const targetUrl = `${API_TARGET}${req.originalUrl}`;
 
@@ -144,10 +147,7 @@ app.use(
  */
 app.get('/env.js', (_req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  const apiBaseUrl = process.env['API_TARGET']
-    || process.env['VITE_API_BASE_URL']
-    || process.env['REACT_APP_API_BASE_URL']
-    || '/api';
+  const apiBaseUrl = resolveApiTarget() || '/api';
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, { API_BASE_URL: '${apiBaseUrl}' });`;
   res.send(payload);
 });
@@ -174,8 +174,9 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     if (error) {
       throw error;
     }
-
+    const target = resolveApiTarget();
     console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`[SSR] API proxy target: ${target}`);
   });
 }
 
