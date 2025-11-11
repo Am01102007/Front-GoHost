@@ -7,6 +7,7 @@
     "start:no-proxy": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "start:prod": "npm run build && npm run serve:ssr:AppAlojamientoTmp",
     "serve:ssr:AppAlojamientoTmp": "node dist/AppAlojamientoTmp/server/server.mjs",
     "backend:proxy": "node scripts/simple-proxy.mjs",
     "start:all": "concurrently -n proxy,ng \"npm run backend:proxy\" \"npm start\""
