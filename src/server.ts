@@ -145,9 +145,13 @@ app.use(
  * Endpoint de configuración runtime: /env.js
  * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
  */
-app.get('/env.js', (_req, res) => {
+app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  const apiBaseUrl = resolveApiTarget() || '/api';
+  const host = (req.headers['host'] || '').toString().toLowerCase();
+  // En entorno local (preview SSR en http://localhost:*), forzamos cliente a usar '/api'
+  // para evitar CORS y aprovechar el proxy del SSR.
+  const isLocalPreview = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const apiBaseUrl = isLocalPreview ? '/api' : (resolveApiTarget() || '/api');
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, { API_BASE_URL: '${apiBaseUrl}' });`;
   res.send(payload);
 });

@@ -13,7 +13,15 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  private getHeaders(): HttpHeaders {
+  // Headers mínimos para evitar preflight innecesario en peticiones simples.
+  private getAcceptHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'Accept': 'application/json'
+    });
+  }
+
+  // Headers para envíos con cuerpo JSON (POST/PUT), donde sí corresponde Content-Type.
+  private getJsonHeaders(): HttpHeaders {
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json'
@@ -22,25 +30,25 @@ export class ApiService {
 
   get<T>(endpoint: string): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${endpoint}`, {
-      headers: this.getHeaders()
+      headers: this.getAcceptHeaders()
     });
   }
 
   post<T>(endpoint: string, data: any): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, {
-      headers: this.getHeaders()
+      headers: this.getJsonHeaders()
     });
   }
 
   put<T>(endpoint: string, data: any): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}${endpoint}`, data, {
-      headers: this.getHeaders()
+      headers: this.getJsonHeaders()
     });
   }
 
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${endpoint}`, {
-      headers: this.getHeaders()
+      headers: this.getAcceptHeaders()
     });
   }
 }
