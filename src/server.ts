@@ -147,11 +147,9 @@ app.use(
  */
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  const host = (req.headers['host'] || '').toString().toLowerCase();
-  // En entorno local (preview SSR en http://localhost:*), forzamos cliente a usar '/api'
-  // para evitar CORS y aprovechar el proxy del SSR.
-  const isLocalPreview = host.startsWith('localhost') || host.startsWith('127.0.0.1');
-  const apiBaseUrl = isLocalPreview ? '/api' : (resolveApiTarget() || '/api');
+  // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
+  // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
+  const apiBaseUrl = '/api';
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, { API_BASE_URL: '${apiBaseUrl}' });`;
   res.send(payload);
 });
