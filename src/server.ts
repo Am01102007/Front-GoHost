@@ -32,8 +32,17 @@ app.use('/api', (req, res) => {
   // Permite configurar el destino vía variable de entorno, compatible con Vite/CRA.
   const API_TARGET = process.env['API_TARGET']
     || process.env['VITE_API_BASE_URL']
-    || process.env['REACT_APP_API_BASE_URL']
-    || 'http://localhost:8081';
+    || process.env['REACT_APP_API_BASE_URL'];
+
+  // Si no hay destino configurado, devolver 503 con explicación clara.
+  if (!API_TARGET) {
+    res.status(503).json({
+      error: 'Service Unavailable',
+      detail: 'API target no configurado. Define API_TARGET (o VITE_API_BASE_URL / REACT_APP_API_BASE_URL) en Railway.',
+    });
+    return;
+  }
+
   const targetUrl = `${API_TARGET}${req.originalUrl}`;
 
   const method = req.method;

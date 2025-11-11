@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, forkJoin, map, of, timeout } from 'rxjs';
 import { NotificationsService } from './notifications.service';
+import { API_BASE } from '../../core/config';
 
 interface CheckResult {
   name: string;
@@ -18,6 +19,16 @@ export class BackendDiagnosticsService {
 
   /** Ejecuta diagnósticos básicos al iniciar la app. */
   runOnStartup(): void {
+    // No ejecutar diagnósticos en SSR para evitar llamadas durante build/render.
+    if (typeof window === 'undefined') {
+      console.warn('[diagnostics] omitido: SSR activo');
+      return;
+    }
+    // Si el backend no está claramente configurado, omitir diagnósticos.
+    if (!this.isBackendConfigured()) {
+      console.warn('[diagnostics] omitido: backend no configurado (API_BASE=', API_BASE, ')');
+      return;
+    }
     this.runChecks().subscribe(({ results }) => {
       const allOk = results.every(r => r.ok);
       const summary = results.map(r => `${r.name}: ${r.ok ? 'OK' : 'FAIL'}${r.status ? ` (${r.status})` : ''}`).join(' | ');
@@ -75,5 +86,12 @@ export class BackendDiagnosticsService {
         } as CheckResult);
       })
     );
+  }
+
+  private isBackendConfigured(): boolean {
+    // Consideramos configurado si API_BASE no es 'undefined' y si hay señal de configuración runtime.
+    const env = (globalThis as any).__ENV__?.API_BASE_URL;
+    if (!env || env === 'undefined') return false;
+    return true;
   }
 }
