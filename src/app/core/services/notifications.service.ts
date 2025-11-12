@@ -42,6 +42,16 @@ export class NotificationsService {
   }
 
   /**
+   * Muestra un mensaje de advertencia.
+   * @param title Título del mensaje.
+   * @param text Texto adicional opcional.
+   */
+  warning(title: string, text?: string): void {
+    if (!this.isBrowser) { console.warn(`[WARNING] ${title} ${text ?? ''}`); return; }
+    Swal.fire({ icon: 'warning', title, text, timer: 2500, showConfirmButton: false });
+  }
+
+  /**
    * Muestra una notificación genérica basada en el tipo.
    * @param type Tipo de notificación ('success', 'error', 'info', 'warning').
    * @param message Mensaje a mostrar.
@@ -58,8 +68,7 @@ export class NotificationsService {
         this.info(message);
         break;
       case 'warning':
-        if (!this.isBrowser) { console.warn(`[WARNING] ${message}`); return; }
-        Swal.fire({ icon: 'warning', title: message, timer: 2500, showConfirmButton: false });
+        this.warning(message);
         break;
     }
   }
