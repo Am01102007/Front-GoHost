@@ -472,8 +472,11 @@ export class ListingsService {
     let body: any = payload;
     if (files && files.length > 0) {
       const formData = new FormData();
-      const dataBlob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      formData.append('data', dataBlob);
+      // Importante: muchos backends esperan el JSON como cadena en el part "data"
+      // y NO como Blob con content-type application/json.
+      // Enviar como string evita errores de "JSON mal formado" (400).
+      const { fotos, ...rest } = payload;
+      formData.append('data', JSON.stringify(rest));
       files.forEach((file) => {
         formData.append('files', file, file.name);
       });
