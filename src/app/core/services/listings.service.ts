@@ -482,19 +482,19 @@ export class ListingsService {
       filesToSend = files;
     }
 
-    // Construir cuerpo de la petición
-    let body: any = basePayload;
+    // Construir cuerpo de la petición: SIEMPRE multipart/form-data con 'data' y opcionalmente 'files'
     // Preparar el payload sin 'fotos' para el part 'data'
     const { fotos: _ignoredFotos, ...restPayload } = basePayload as any;
+    const formData = new FormData();
+    // Enviar JSON como Blob 'application/json' bajo la clave 'data'
+    formData.append('data', new Blob([JSON.stringify(restPayload)], { type: 'application/json' }));
+    // Adjuntar archivos si existen
     if (filesToSend && filesToSend.length > 0) {
-      const formData = new FormData();
-      // Según la corrección solicitada: enviar JSON como Blob application/json
-      formData.append('data', new Blob([JSON.stringify(restPayload)], { type: 'application/json' }));
       filesToSend.forEach((file) => {
         formData.append('files', file, file.name);
       });
-      body = formData;
     }
+    const body: any = formData;
 
     return this.http.post<any>(url, body).pipe(
       map(res => this.toListing(res)),
@@ -512,12 +512,14 @@ export class ListingsService {
       catchError(err => {
         console.error('❌ ListingsService.create error', err);
         // Si el backend rechaza el Blob JSON (400 por JSON mal formado), reintentar con string
-        const shouldRetryWithString = filesToSend && (err?.status === 400);
+        const shouldRetryWithString = err?.status === 400;
         if (shouldRetryWithString) {
           console.warn('⚠️ Reintentando creación con data como string JSON en FormData');
           const fd = new FormData();
           fd.append('data', JSON.stringify(restPayload));
-          filesToSend!.forEach((file) => fd.append('files', file, file.name));
+          if (filesToSend && filesToSend.length > 0) {
+            filesToSend.forEach((file) => fd.append('files', file, file.name));
+          }
           return this.http.post<any>(url, fd).pipe(
             map(res => this.toListing(res)),
             tap(created => {
