@@ -428,7 +428,8 @@ export class ListingsService {
     zip?: string;
     precioNoche: number;
     capacidad: number;
-    fotos: string[];
+    // Soporta tanto arrays de rutas como archivos para compatibilidad
+    fotos: (string[] | File[]);
     servicios?: string[];
   }, files?: File[]): Observable<Listing> {
     console.log('🚀 ListingsService: Creando nuevo alojamiento:', dto.titulo);
@@ -437,6 +438,10 @@ export class ListingsService {
     // Crear alojamiento temporal para optimistic update
     const tempId = `temp-${Date.now()}`;
     const user = this.auth.currentUser();
+    const previewImages: string[] = (Array.isArray(dto.fotos) && dto.fotos.length > 0 && typeof (dto.fotos as any)[0] === 'string')
+      ? (dto.fotos as string[])
+      : [];
+
     const optimisticListing: Listing = {
       id: tempId,
       titulo: dto.titulo,
@@ -449,7 +454,7 @@ export class ListingsService {
         lng: undefined
       },
       precioPorNoche: dto.precioNoche,
-      imagenes: dto.fotos,
+      imagenes: previewImages,
       servicios: dto.servicios || [],
       anfitrionId: String(user?.id || ''),
       anfitrionNombre: user ? `${user.nombre || ''} ${user.apellido || ''}`.trim() : undefined,
@@ -462,22 +467,30 @@ export class ListingsService {
     console.log('⚡ ListingsService: Update optimista aplicado');
 
     const url = `${this.API_BASE}/alojamientos`;
-    const payload = {
+    const basePayload = {
       ...dto,
       servicios: dto.servicios ?? [],
       anfitrionId: user?.id || undefined
     };
 
-    // Si se proveen archivos, usar multipart/form-data; de lo contrario, enviar JSON.
-    let body: any = payload;
-    if (files && files.length > 0) {
+    // Detectar archivos a enviar: dto.fotos como File[] o el segundo parámetro 'files'
+    let filesToSend: File[] | undefined;
+    if (Array.isArray(dto.fotos) && dto.fotos.length > 0 && dto.fotos[0] instanceof File) {
+      filesToSend = dto.fotos as File[];
+    }
+    if (!filesToSend && files && files.length > 0) {
+      filesToSend = files;
+    }
+
+    // Construir cuerpo de la petición
+    let body: any = basePayload;
+    // Preparar el payload sin 'fotos' para el part 'data'
+    const { fotos: _ignoredFotos, ...restPayload } = basePayload as any;
+    if (filesToSend && filesToSend.length > 0) {
       const formData = new FormData();
-      // Importante: muchos backends esperan el JSON como cadena en el part "data"
-      // y NO como Blob con content-type application/json.
-      // Enviar como string evita errores de "JSON mal formado" (400).
-      const { fotos, ...rest } = payload;
-      formData.append('data', JSON.stringify(rest));
-      files.forEach((file) => {
+      // Según la corrección solicitada: enviar JSON como Blob application/json
+      formData.append('data', new Blob([JSON.stringify(restPayload)], { type: 'application/json' }));
+      filesToSend.forEach((file) => {
         formData.append('files', file, file.name);
       });
       body = formData;
@@ -498,12 +511,39 @@ export class ListingsService {
       }),
       catchError(err => {
         console.error('❌ ListingsService.create error', err);
-        
+        // Si el backend rechaza el Blob JSON (400 por JSON mal formado), reintentar con string
+        const shouldRetryWithString = filesToSend && (err?.status === 400);
+        if (shouldRetryWithString) {
+          console.warn('⚠️ Reintentando creación con data como string JSON en FormData');
+          const fd = new FormData();
+          fd.append('data', JSON.stringify(restPayload));
+          filesToSend!.forEach((file) => fd.append('files', file, file.name));
+          return this.http.post<any>(url, fd).pipe(
+            map(res => this.toListing(res)),
+            tap(created => {
+              const updatedListings = this.listings().map(listing => listing.id === tempId ? created : listing);
+              this.listings.set(updatedListings);
+              this.dataSyncService.notifyDataChange('listings', 'create', created, created.id, 'create');
+              console.log(`✅ ListingsService: Alojamiento creado exitosamente con ID ${created.id} (retry)`);
+            }),
+            catchError(err2 => {
+              console.error('❌ Retry también falló:', err2);
+              // Revertir optimistic update: remover el alojamiento temporal
+              const revertedListings = this.listings().filter(listing => listing.id !== tempId);
+              this.listings.set(revertedListings);
+              console.log('🔄 ListingsService: Optimistic update revertido tras error en retry');
+              return throwError(() => err2);
+            }),
+            finalize(() => {
+              this.dataSyncService.setLoading('listings', false);
+            })
+          );
+        }
+
         // Revertir optimistic update: remover el alojamiento temporal
         const revertedListings = this.listings().filter(listing => listing.id !== tempId);
         this.listings.set(revertedListings);
         console.log('🔄 ListingsService: Optimistic update revertido tras error');
-        
         return throwError(() => err);
       }),
       finalize(() => {
