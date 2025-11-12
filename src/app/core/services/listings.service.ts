@@ -419,81 +419,83 @@ export class ListingsService {
    * });
    * ```
    */
-create(dto: {
-  titulo: string;
-  descripcion?: string;
-  ciudad: string;
-  pais: string;
-  calle: string;
-  zip?: string;
-  precioNoche: number;
-  capacidad: number;
-  fotos: File[];  
-  servicios?: string[];
-}): Observable<Listing> {
-  console.log('ListingsService: Creando nuevo alojamiento:', dto.titulo);
-  this.dataSyncService.setLoading('listings', true);
+  create(dto: {
+    titulo: string;
+    descripcion?: string;
+    ciudad: string;
+    pais: string;
+    calle: string;
+    zip?: string;
+    precioNoche: number;
+    capacidad: number;
+    fotos: string[];
+    servicios?: string[];
+  }): Observable<Listing> {
+    console.log('🚀 ListingsService: Creando nuevo alojamiento:', dto.titulo);
+    this.dataSyncService.setLoading('listings', true);
 
-  // CREAR FormData CORRECTAMENTE
-  const formData = new FormData();
+    // Crear alojamiento temporal para optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const user = this.auth.currentUser();
+    const optimisticListing: Listing = {
+      id: tempId,
+      titulo: dto.titulo,
+      descripcion: dto.descripcion || '',
+      ubicacion: {
+        direccion: dto.calle,
+        ciudad: dto.ciudad,
+        pais: dto.pais,
+        lat: undefined,
+        lng: undefined
+      },
+      precioPorNoche: dto.precioNoche,
+      imagenes: dto.fotos,
+      servicios: dto.servicios || [],
+      anfitrionId: String(user?.id || ''),
+      anfitrionNombre: user ? `${user.nombre || ''} ${user.apellido || ''}`.trim() : undefined,
+      capacidad: dto.capacidad
+    };
 
-  // Agregar el JSON como Blob
-  const alojamientoData = {
-    titulo: dto.titulo,
-    descripcion: dto.descripcion || '',
-    ciudad: dto.ciudad,
-    pais: dto.pais,
-    calle: dto.calle,
-    zip: dto.zip || '',
-    precioNoche: dto.precioNoche,
-    capacidad: dto.capacidad,
-    servicios: dto.servicios || []
-  };
+    // Optimistic update: agregar inmediatamente a la UI
+    const currentListings = this.listings();
+    this.listings.set([optimisticListing, ...currentListings]);
+    console.log('⚡ ListingsService: Update optimista aplicado');
 
-  // IMPORTANTE: El backend espera el JSON en la parte "data"
-  formData.append('data', new Blob([JSON.stringify(alojamientoData)], {
-    type: 'application/json'
-  }));
+    const url = `${this.API_BASE}/alojamientos`;
+    const payload = {
+      ...dto,
+      servicios: dto.servicios ?? [],
+      anfitrionId: user?.id || undefined
+    };
 
-  // Agregar las imágenes como archivos
-  if (dto.fotos && dto.fotos.length > 0) {
-    dto.fotos.forEach((file, index) => {
-      // IMPORTANTE: Todos los archivos van bajo el mismo nombre "files"
-      formData.append('files', file, file.name);
-      console.log(`Agregando imagen ${index + 1}/${dto.fotos.length}: ${file.name}`);
-    });
-  } else {
-    console.error('No se proporcionaron imágenes');
-    return throwError(() => new Error('Debe proporcionar al menos una imagen'));
+    return this.http.post<any>(url, payload).pipe(
+      map(res => this.toListing(res)),
+      tap(created => {
+        // Reemplazar el alojamiento temporal con el real del servidor
+        const updatedListings = this.listings().map(listing => 
+          listing.id === tempId ? created : listing
+        );
+        this.listings.set(updatedListings);
+        
+        // Notificar creación exitosa
+        this.dataSyncService.notifyDataChange('listings', 'create', created, created.id, 'create');
+        console.log(`✅ ListingsService: Alojamiento creado exitosamente con ID ${created.id}`);
+      }),
+      catchError(err => {
+        console.error('❌ ListingsService.create error', err);
+        
+        // Revertir optimistic update: remover el alojamiento temporal
+        const revertedListings = this.listings().filter(listing => listing.id !== tempId);
+        this.listings.set(revertedListings);
+        console.log('🔄 ListingsService: Optimistic update revertido tras error');
+        
+        return throwError(() => err);
+      }),
+      finalize(() => {
+        this.dataSyncService.setLoading('listings', false);
+      })
+    );
   }
-
-  const url = `${this.API_BASE}/alojamientos`;
-
-  return this.http.post<any>(url, formData, {
-  }).pipe(
-    map(res => this.toListing(res)),
-    tap(created => {
-      const updatedListings = this.listings().map(listing => 
-        listing.id === 'temp-id' ? created : listing
-      );
-      this.listings.set(updatedListings);
-      
-      this.dataSyncService.notifyDataChange('listings', 'create', created, created.id, 'create');
-      console.log(`✅ ListingsService: Alojamiento creado exitosamente con ID ${created.id}`);
-    }),
-    catchError(err => {
-      console.error('❌ ListingsService.create error', err);
-      console.error('Status:', err.status);
-      console.error('Message:', err.message);
-      console.error('Error body:', err.error);
-      
-      return throwError(() => err);
-    }),
-    finalize(() => {
-      this.dataSyncService.setLoading('listings', false);
-    })
-  );
-}
 
   /**
    * Actualiza un alojamiento existente con update optimista.
