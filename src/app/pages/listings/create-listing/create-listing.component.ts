@@ -128,24 +128,20 @@ export class CreateListingComponent {
   }
 
   private uploadImages(files: File[]) {
-    // Como el backend puede no estar disponible, usar las previsualizaciones como URLs
-    // En un entorno de producción, esto debería subir al servidor real
+    // Genera data URLs para previsualización y optimismo de UI
     const uploads = files.map((file, index) => {
       return new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
-          // Usar la previsualización como URL temporal
           const dataUrl = reader.result as string;
           resolve(dataUrl);
         };
         reader.onerror = () => {
-          // Fallback a placeholder si falla la lectura
           resolve(`https://picsum.photos/seed/image-${index}-${Date.now()}/800/500`);
         };
         reader.readAsDataURL(file);
       });
     });
-
     return forkJoin(uploads);
   }
 
@@ -166,7 +162,6 @@ export class CreateListingComponent {
     const v = this.form.value;
     
     const doCreate = (photoUrls: string[]) => {
-      // Usar las URLs de las imágenes (Data URLs o placeholders)
       const finalUrls = photoUrls.length > 0 ? photoUrls : this.photoPreviews;
 
       this.listingsSvc.create({
@@ -179,7 +174,7 @@ export class CreateListingComponent {
         capacidad: v.capacidad!,
         fotos: finalUrls,
         servicios: (v.servicios || [])
-      }).subscribe({
+      }, this.selectedFiles).subscribe({
         next: () => {
           this.notifications.success(
             'Alojamiento creado', 
@@ -193,7 +188,6 @@ export class CreateListingComponent {
         }
       });
     };
-
     if (this.selectedFiles.length > 0) {
       this.uploading = true;
       this.uploadImages(this.selectedFiles).subscribe({
@@ -204,12 +198,10 @@ export class CreateListingComponent {
         error: (err) => {
           this.uploading = false;
           console.error('Error uploading images:', err);
-          // Usar las previsualizaciones como fallback
           doCreate(this.photoPreviews);
         }
       });
     } else {
-      // Esto no debería pasar debido a la validación, pero por seguridad
       doCreate([]);
     }
   }

@@ -430,7 +430,7 @@ export class ListingsService {
     capacidad: number;
     fotos: string[];
     servicios?: string[];
-  }): Observable<Listing> {
+  }, files?: File[]): Observable<Listing> {
     console.log('🚀 ListingsService: Creando nuevo alojamiento:', dto.titulo);
     this.dataSyncService.setLoading('listings', true);
 
@@ -468,7 +468,19 @@ export class ListingsService {
       anfitrionId: user?.id || undefined
     };
 
-    return this.http.post<any>(url, payload).pipe(
+    // Si se proveen archivos, usar multipart/form-data; de lo contrario, enviar JSON.
+    let body: any = payload;
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      const dataBlob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      formData.append('data', dataBlob);
+      files.forEach((file) => {
+        formData.append('files', file, file.name);
+      });
+      body = formData;
+    }
+
+    return this.http.post<any>(url, body).pipe(
       map(res => this.toListing(res)),
       tap(created => {
         // Reemplazar el alojamiento temporal con el real del servidor
