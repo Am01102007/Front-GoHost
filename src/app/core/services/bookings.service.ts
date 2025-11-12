@@ -243,11 +243,17 @@ export class BookingsService {
    * Intenta usar endpoint dedicado; si no existe, devuelve [].
    */
   fetchForHost(page = 0, size = 10): Observable<Booking[]> {
-    const current = (this.auth.currentUser?.()) || undefined;
-    if (!current?.id) {
-      console.warn('BookingsService.fetchForHost: no hay anfitrión autenticado');
-      this.bookings.set([]);
-      return of([]);
+    // Similar a fetchMine: permitir que el backend derive el anfitrión desde el token.
+    // No bloquear por falta de currentUser en memoria para evitar lista vacía en SSR/cargas iniciales.
+    try {
+      const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('auth_token');
+      if (!hasToken) {
+        console.warn('BookingsService.fetchForHost: sin token, no se solicita al backend');
+        this.bookings.set([]);
+        return of([]);
+      }
+    } catch {
+      // En SSR donde no hay localStorage, proceder normalmente
     }
 
     this.loading.set(true);

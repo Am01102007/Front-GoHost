@@ -583,7 +583,7 @@ export class AuthService {
    * Permite modificar nombre, apellido, email y teléfono.
    * @param values Valores a actualizar
    */
-  updateProfile(values: Partial<{ nombre: string; apellido: string; email: string; telefono: string; descripcion: string; telefonoCodigo: string; passwordActual: string; passwordNueva: string; avatarUrl: string; }>): Observable<User> {
+  updateProfile(values: Partial<{ nombre: string; apellido: string; email: string; telefono: string; descripcion: string; telefonoCodigo: string; passwordActual: string; passwordNueva: string; avatarUrl: string; }>, fotoPerfil?: File): Observable<User> {
     if (!this.currentUser()) {
       return throwError(() => new Error('No hay usuario autenticado'));
     }
@@ -592,7 +592,6 @@ export class AuthService {
     this.error.set(null);
 
     const primaryUrl = `${this.API_URL}/usuarios/me`;
-    const fallbackUrl = `${this.API_URL}/auth/me`;
 
     // Construir payload parcial (sólo campos presentes y no vacíos)
     const user = this.currentUser()!;
@@ -630,19 +629,44 @@ export class AuthService {
     };
 
     const handle = (res: any) => this.mapToUser(res.user || res);
-    const tryPatch = (url: string) => this.http.patch<any>(url, partial).pipe(map(handle));
-    const tryPut = (url: string) => this.http.put<any>(url, fullPayload).pipe(map(handle));
 
-    return tryPatch(primaryUrl).pipe(
-      // Si PATCH falla, intentar PUT
-      catchError(_ => tryPut(primaryUrl)),
-      // Si el primario falla, intentar el endpoint alterno
-      catchError(_ => tryPatch(fallbackUrl)),
-      catchError(err2 => tryPut(fallbackUrl).pipe(catchError(err3 => {
-        console.error('❌ AuthService.updateProfile error:', err2, err3);
-        this.error.set('Error al actualizar perfil');
-        return throwError(() => err3);
-      }))),
+    // Si hay fotoPerfil, usar multipart/form-data con parte 'data' (JSON) y 'fotoPerfil' (archivo)
+    if (fotoPerfil) {
+      const form = new FormData();
+      form.append('data', new Blob([JSON.stringify(partial)], { type: 'application/json' }));
+      form.append('fotoPerfil', fotoPerfil);
+
+      return this.http.patch<any>(primaryUrl, form).pipe(
+        map(handle),
+        tap(userUpdated => {
+          const merged = { ...user, ...userUpdated };
+          this.currentUser.set(merged);
+          this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
+          console.log('✅ Perfil de usuario actualizado (con foto)');
+        }),
+        catchError(err => {
+          console.error('❌ AuthService.updateProfile (multipart) error:', err);
+          this.error.set('No se pudo actualizar tu perfil (imagen). Inténtalo de nuevo.');
+          return throwError(() => err);
+        }),
+        finalize(() => this.loading.set(false))
+      );
+    }
+
+    // Sin foto: usar JSON (PATCH parcial con fallback a PUT)
+    const tryPatch = () => this.http.patch<any>(primaryUrl, partial).pipe(map(handle));
+    const tryPut = () => this.http.put<any>(primaryUrl, fullPayload).pipe(map(handle));
+
+    return tryPatch().pipe(
+      catchError(err => {
+        console.warn('AuthService.updateProfile: PATCH falló, intentando PUT', err?.status);
+        return tryPut();
+      }),
+      catchError(err => {
+        console.error('❌ AuthService.updateProfile error:', err);
+        this.error.set('No se pudo actualizar tu perfil. Inténtalo de nuevo más tarde.');
+        return throwError(() => err);
+      }),
       tap(userUpdated => {
         const merged = { ...user, ...userUpdated };
         this.currentUser.set(merged);
@@ -650,7 +674,6 @@ export class AuthService {
         console.log('✅ Perfil de usuario actualizado');
       }),
       tap(() => {
-        // Reconsultar perfil canónico para sincronizar datos
         this.loadProfile().subscribe({
           next: (u) => {
             this.currentUser.set(u);
@@ -712,29 +735,9 @@ export class AuthService {
    * Sube la imagen de avatar del usuario autenticado y devuelve la URL pública.
    * Intenta primero el endpoint principal y luego un alterno si existe.
    */
-  uploadAvatar(file: File): Observable<string> {
-    const form = new FormData();
-    form.append('file', file);
-    const primaryUrl = `${this.API_URL}/usuarios/me/avatar`;
-    const fallbackUrl = `${this.API_URL}/auth/me/avatar`;
-
-    const mapUrl = (res: any) => {
-      // Se aceptan múltiples formatos de respuesta: {url}, {avatarUrl}, {path}
-      return res?.url || res?.avatarUrl || res?.path || '';
-    };
-
-    return this.http.post<any>(primaryUrl, form).pipe(
-      map(mapUrl),
-      catchError(_ => this.http.post<any>(fallbackUrl, form).pipe(map(mapUrl))),
-      tap(url => {
-        if (!url) return;
-        // Guardar inmediatamente en el perfil para cumplir el requisito
-        this.updateProfile({ avatarUrl: url }).subscribe({
-          next: () => console.log('✅ Avatar actualizado en perfil'),
-          error: () => console.warn('⚠️ Avatar subido pero no se pudo guardar en perfil de inmediato')
-        });
-      })
-    );
+  uploadAvatar(file: File): Observable<User> {
+    // Usa el endpoint de edición de perfil con multipart para subir y guardar la imagen
+    return this.updateProfile({}, file);
   }
 
 

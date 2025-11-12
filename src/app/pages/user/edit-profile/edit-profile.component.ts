@@ -29,6 +29,7 @@ export class EditProfileComponent implements OnInit {
 
   documentos: string[] = [];
   fotoPerfilNombre = '';
+  fotoPerfilFile: File | null = null;
   saving = false;
 
   // Mantener el formulario sincronizado si el usuario cambia
@@ -74,13 +75,14 @@ export class EditProfileComponent implements OnInit {
 
     this.saving = true;
     const formData = this.form.getRawValue();
-    
-    this.auth.updateProfile(formData).subscribe({
+
+    this.auth.updateProfile(formData, this.fotoPerfilFile || undefined).subscribe({
       next: () => {
         this.saving = false;
         this.notify.success('Perfil actualizado', 'Los cambios se han guardado correctamente.');
         // Limpiar campos de contraseña después de guardar
         this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+        this.fotoPerfilFile = null;
       },
       error: (err: any) => {
         this.saving = false;
@@ -166,14 +168,15 @@ export class EditProfileComponent implements OnInit {
     }
     
     this.fotoPerfilNombre = file.name;
+    this.fotoPerfilFile = file;
     input.value = '';
-    // Subir y guardar inmediatamente
+    // Subir y guardar inmediatamente usando PATCH multipart (data + fotoPerfil)
     this.saving = true;
-    this.auth.uploadAvatar(file).subscribe({
-      next: (url) => {
+    const currentValues = this.form.getRawValue();
+    this.auth.updateProfile(currentValues, file).subscribe({
+      next: () => {
         this.saving = false;
-        const msg = url ? 'La foto se ha guardado en tu perfil.' : 'Foto subida, revisa tu perfil.';
-        this.notify.success('Foto de perfil actualizada', msg);
+        this.notify.success('Foto de perfil actualizada', 'La foto se ha guardado en tu perfil.');
       },
       error: (err) => {
         this.saving = false;

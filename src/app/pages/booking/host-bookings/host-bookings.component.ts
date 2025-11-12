@@ -24,8 +24,6 @@ export class HostBookingsComponent implements OnInit {
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
 
   ngOnInit() {
-    const user = this.auth.currentUser();
-    if (!user?.id) return;
     // Asegurar datos de alojamientos y reservas del anfitrión
     this.listings.fetchForHost().subscribe();
     this.bookings.fetchForHost().subscribe({
