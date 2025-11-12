@@ -49,17 +49,17 @@ export class HostBookingsComponent implements OnInit {
   });
 
   get pendientes() {
-    return this.all().filter((b: Booking) => b.estado === 'pendiente');
+    return this.all().filter((b: any) => b.estado === 'pendiente');
   }
 
   get activas() {
     // Activas = confirmadas/pagadas y futuras
     const now = new Date();
-    return this.all().filter((b: Booking) => b.estado !== 'cancelado' && new Date(b.fechaInicio) >= now);
+    return this.all().filter((b: any) => b.estado !== 'cancelado' && new Date(b.fechaInicio) >= now);
   }
 
   get canceladas() {
-    return this.all().filter((b: Booking) => b.estado === 'cancelado');
+    return this.all().filter((b: any) => b.estado === 'cancelado');
   }
 
   get items() {
