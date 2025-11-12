@@ -567,6 +567,7 @@ export class ListingsService {
     zip: string;
     precioNoche: number;
     capacidad: number;
+    servicios: string[];
     fotos: string[];
     activo: boolean;
   }>): Observable<Listing> {
@@ -597,7 +598,8 @@ export class ListingsService {
       },
       precioPorNoche: values.precioNoche ?? originalListing.precioPorNoche,
       capacidad: values.capacidad ?? originalListing.capacidad,
-      imagenes: values.fotos ?? originalListing.imagenes
+      imagenes: values.fotos ?? originalListing.imagenes,
+      servicios: values.servicios ?? originalListing.servicios
     };
 
     // Optimistic update: aplicar cambios inmediatamente
@@ -607,7 +609,22 @@ export class ListingsService {
     console.log('⚡ ListingsService: Update optimista aplicado para', id);
 
     const url = `${this.API_BASE}/alojamientos/${id}`;
-    return this.http.patch<any>(url, values).pipe(
+    // Normalizar servicios si vienen en el update
+    let payload: any = { ...values };
+    if (Array.isArray(values.servicios)) {
+      const SERVICE_ENUMS = [
+        'JACUZZI','ESTACIONAMIENTO','SPA','COCINA','RECEPCION_24H','PARRILLA','SECADORA','SERVICIO_LIMPIEZA','JARDIN','TELEVISION','PISCINA','BALCON','CALEFACCION','TERRAZA','LAVADORA','GIMNASIO','ASCENSOR','AIRE_ACONDICIONADO','DESAYUNO_INCLUIDO','MASCOTAS_PERMITIDAS','NETFLIX','WIFI','ACCESO_DISCAPACITADOS','SEGURIDAD_24H'
+      ];
+      const normalizeServicio = (s: string): string => {
+        const upper = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+        const repl = upper.replace(/\s+/g, '_').replace(/-/g, '_');
+        return repl;
+      };
+      payload.servicios = values.servicios
+        .map(normalizeServicio)
+        .filter(v => SERVICE_ENUMS.includes(v));
+    }
+    return this.http.patch<any>(url, payload).pipe(
       map(dto => this.toListing(dto)),
       tap(updated => {
         // Reemplazar con la versión confirmada del servidor
