@@ -21,6 +21,9 @@
       <label>Código de país
         <input formControlName="telefonoCodigo" placeholder="+57"/>
       </label>
+      <label>Número
+        <input formControlName="telefono" placeholder="300 123 4567"/>
+      </label>
     </div>
   </section>
 
@@ -64,7 +67,7 @@
   <section class="bloque foto">
     <h3>Foto de perfil</h3>
     <div class="avatar">
-      <img src="/icons/user.svg" alt="avatar"/>
+      <img [src]="auth.currentUser()?.avatarUrl || '/icons/user.svg'" alt="avatar"/>
     </div>
     <label class="btn">
       <input type="file" accept="image/*" (change)="onSubirFoto($event)"/>

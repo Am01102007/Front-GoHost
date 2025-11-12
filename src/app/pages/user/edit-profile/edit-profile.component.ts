@@ -20,6 +20,7 @@ export class EditProfileComponent implements OnInit {
     nombre: this.auth.currentUser()?.nombre || '',
     apellido: this.auth.currentUser()?.apellido || '',
     email: [this.auth.currentUser()?.email || '', [Validators.required, Validators.email]],
+    telefono: this.auth.currentUser()?.telefono || '',
     telefonoCodigo: [''],
     descripcion: [''],
     passwordActual: [''],
@@ -38,7 +39,8 @@ export class EditProfileComponent implements OnInit {
       this.form.patchValue({
         nombre: u.nombre || '',
         apellido: u.apellido || '',
-        email: u.email || ''
+        email: u.email || '',
+        telefono: (u as any).telefono || ''
       }, { emitEvent: false });
     } catch {}
   });
@@ -51,7 +53,10 @@ export class EditProfileComponent implements OnInit {
           this.form.patchValue({
             nombre: u.nombre || '',
             apellido: u.apellido || '',
-            email: u.email || ''
+            email: u.email || '',
+            telefono: (u as any).telefono || '',
+            telefonoCodigo: (u as any).telefonoCodigo || '',
+            descripcion: (u as any).descripcion || ''
           });
         } catch {}
       },
@@ -162,8 +167,19 @@ export class EditProfileComponent implements OnInit {
     
     this.fotoPerfilNombre = file.name;
     input.value = '';
-    
-    this.notify.success('Foto seleccionada', 'La foto de perfil se ha seleccionado correctamente.');
+    // Subir y guardar inmediatamente
+    this.saving = true;
+    this.auth.uploadAvatar(file).subscribe({
+      next: (url) => {
+        this.saving = false;
+        const msg = url ? 'La foto se ha guardado en tu perfil.' : 'Foto subida, revisa tu perfil.';
+        this.notify.success('Foto de perfil actualizada', msg);
+      },
+      error: (err) => {
+        this.saving = false;
+        this.notify.httpError(err);
+      }
+    });
   }
 
   removeDocument(index: number) {

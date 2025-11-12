@@ -207,12 +207,13 @@ export class BookingsService {
     // Evitar llamadas si no hay sesión/token para prevenir 401 innecesarios
     try {
       const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('auth_token');
-      const isAuth = this.auth.isAuthenticated();
-      if (!hasToken || !isAuth) {
-        console.warn('BookingsService.fetchMine: sin sesión, no se solicita al backend');
+      if (!hasToken) {
+        console.warn('BookingsService.fetchMine: sin token, no se solicita al backend');
         this.bookings.set([]);
         return of([]);
       }
+      // Si hay token pero aún no está restaurado el usuario, dejamos que el backend
+      // derive al usuario desde el token. Esto evita quedarse sin reservas al cargar.
     } catch {
       // En SSR donde no hay localStorage, proceder normalmente
     }

@@ -5,6 +5,7 @@ import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-checkout',
@@ -19,6 +20,7 @@ export class CheckoutComponent {
   auth = inject(AuthService);
   notifications = inject(NotificationsService);
   route = inject(ActivatedRoute);
+  router = inject(Router);
 
   form = this.fb.group({
     listingId: ['', Validators.required],
@@ -29,7 +31,12 @@ export class CheckoutComponent {
   });
 
   private crearReserva(estado: 'pendiente' | 'pagado') {
-    if (this.form.invalid || !this.auth.currentUser()) return;
+    if (this.form.invalid) return;
+    if (!this.auth.currentUser()) {
+      this.notifications.error('Debes iniciar sesión', 'Por favor inicia sesión para crear la reserva');
+      this.router.navigate(['/login'], { queryParams: { redirect: '/checkout' } });
+      return;
+    }
     const v = this.form.value;
     this.bookings.create({
       alojamientoId: v.listingId!,
@@ -41,10 +48,12 @@ export class CheckoutComponent {
         this.bookings.updateStatus(res.id, 'pagado').subscribe(() => {
           this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente');
           this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
+          this.bookings.fetchMine().subscribe(() => this.router.navigate(['/mis-reservas']));
         });
       } else {
         this.notifications.success('Reserva creada', 'Tu reserva quedó pendiente de pago');
         this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
+        this.bookings.fetchMine().subscribe(() => this.router.navigate(['/mis-reservas']));
       }
     });
   }

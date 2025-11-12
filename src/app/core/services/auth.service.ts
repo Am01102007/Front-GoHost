@@ -583,7 +583,7 @@ export class AuthService {
    * Permite modificar nombre, apellido, email y teléfono.
    * @param values Valores a actualizar
    */
-  updateProfile(values: Partial<{ nombre: string; apellido: string; email: string; telefono: string; descripcion: string; telefonoCodigo: string; passwordActual: string; passwordNueva: string; }>): Observable<User> {
+  updateProfile(values: Partial<{ nombre: string; apellido: string; email: string; telefono: string; descripcion: string; telefonoCodigo: string; passwordActual: string; passwordNueva: string; avatarUrl: string; }>): Observable<User> {
     if (!this.currentUser()) {
       return throwError(() => new Error('No hay usuario autenticado'));
     }
@@ -593,45 +593,64 @@ export class AuthService {
 
     const primaryUrl = `${this.API_URL}/usuarios/me`;
     const fallbackUrl = `${this.API_URL}/auth/me`;
-    const payload: any = {
-      nombre: values.nombre ?? this.currentUser()!.nombre,
-      apellido: values.apellido ?? this.currentUser()!.apellido,
-      email: values.email ?? this.currentUser()!.email,
-      telefono: values.telefono ?? this.currentUser()!.telefono,
-      descripcion: values.descripcion ?? (this.currentUser() as any)?.descripcion ?? '',
-      telefonoCodigo: values.telefonoCodigo ?? (this.currentUser() as any)?.telefonoCodigo ?? ''
+
+    // Construir payload parcial (sólo campos presentes y no vacíos)
+    const user = this.currentUser()!;
+    const trim = (x: any) => typeof x === 'string' ? x.trim() : x;
+    const partial: any = {};
+    const candidates: Array<keyof typeof values> = ['nombre','apellido','email','telefono','descripcion','telefonoCodigo'] as any;
+    for (const k of candidates) {
+      const v = trim((values as any)[k]);
+      if (v !== undefined && v !== null && !(typeof v === 'string' && v === '')) {
+        (partial as any)[k] = v;
+      }
+    }
+    // Avatar opcional
+    const avatar = trim((values as any)['avatarUrl']);
+    if (avatar) partial.avatarUrl = avatar;
+
+    // Si el usuario no cambió nada, no llamar al backend innecesariamente
+    if (Object.keys(partial).length === 0) {
+      const current = { ...user } as User;
+      return new Observable<User>(observer => {
+        observer.next(current);
+        observer.complete();
+      }).pipe(finalize(() => this.loading.set(false)));
+    }
+
+    // Payload completo para PUT (si el backend no soporta PATCH)
+    const fullPayload: any = {
+      nombre: partial.nombre ?? user.nombre,
+      apellido: partial.apellido ?? user.apellido,
+      email: partial.email ?? user.email,
+      telefono: partial.telefono ?? user.telefono,
+      descripcion: partial.descripcion ?? (user as any)?.descripcion ?? '',
+      telefonoCodigo: partial.telefonoCodigo ?? (user as any)?.telefonoCodigo ?? '',
+      avatarUrl: partial.avatarUrl ?? (user as any)?.avatarUrl ?? undefined
     };
 
     const handle = (res: any) => this.mapToUser(res.user || res);
+    const tryPatch = (url: string) => this.http.patch<any>(url, partial).pipe(map(handle));
+    const tryPut = (url: string) => this.http.put<any>(url, fullPayload).pipe(map(handle));
 
-    return this.http.put<any>(primaryUrl, payload).pipe(
-      map(res => this.mapToUser(res.user || res)),
-      tap(user => {
-        const merged = { ...this.currentUser()!, ...user };
+    return tryPatch(primaryUrl).pipe(
+      // Si PATCH falla, intentar PUT
+      catchError(_ => tryPut(primaryUrl)),
+      // Si el primario falla, intentar el endpoint alterno
+      catchError(_ => tryPatch(fallbackUrl)),
+      catchError(err2 => tryPut(fallbackUrl).pipe(catchError(err3 => {
+        console.error('❌ AuthService.updateProfile error:', err2, err3);
+        this.error.set('Error al actualizar perfil');
+        return throwError(() => err3);
+      }))),
+      tap(userUpdated => {
+        const merged = { ...user, ...userUpdated };
         this.currentUser.set(merged);
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
         console.log('✅ Perfil de usuario actualizado');
       }),
-      // Reconsultar el perfil para sincronizar con datos canónicos del backend
-      catchError(err => {
-        // Intentar fallback si el endpoint primario no existe
-        return this.http.put<any>(fallbackUrl, payload).pipe(
-          map(handle),
-          tap(user => {
-            const merged = { ...this.currentUser()!, ...user };
-            this.currentUser.set(merged);
-            this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
-            console.log('✅ Perfil de usuario actualizado (fallback)');
-          }),
-          catchError(err2 => {
-            console.error('❌ AuthService.updateProfile error:', err, err2);
-            this.error.set('Error al actualizar perfil');
-            return throwError(() => err2);
-          })
-        );
-      }),
       tap(() => {
-        // Cargar perfil canónico después de actualizar para evitar desajustes
+        // Reconsultar perfil canónico para sincronizar datos
         this.loadProfile().subscribe({
           next: (u) => {
             this.currentUser.set(u);
@@ -685,6 +704,36 @@ export class AuthService {
     return tryPut(primaryUrl).pipe(
       catchError(_ => tryPut(fallbackUrl)),
       finalize(() => this.loading.set(false))
+    );
+  }
+
+
+  /**
+   * Sube la imagen de avatar del usuario autenticado y devuelve la URL pública.
+   * Intenta primero el endpoint principal y luego un alterno si existe.
+   */
+  uploadAvatar(file: File): Observable<string> {
+    const form = new FormData();
+    form.append('file', file);
+    const primaryUrl = `${this.API_URL}/usuarios/me/avatar`;
+    const fallbackUrl = `${this.API_URL}/auth/me/avatar`;
+
+    const mapUrl = (res: any) => {
+      // Se aceptan múltiples formatos de respuesta: {url}, {avatarUrl}, {path}
+      return res?.url || res?.avatarUrl || res?.path || '';
+    };
+
+    return this.http.post<any>(primaryUrl, form).pipe(
+      map(mapUrl),
+      catchError(_ => this.http.post<any>(fallbackUrl, form).pipe(map(mapUrl))),
+      tap(url => {
+        if (!url) return;
+        // Guardar inmediatamente en el perfil para cumplir el requisito
+        this.updateProfile({ avatarUrl: url }).subscribe({
+          next: () => console.log('✅ Avatar actualizado en perfil'),
+          error: () => console.warn('⚠️ Avatar subido pero no se pudo guardar en perfil de inmediato')
+        });
+      })
     );
   }
 

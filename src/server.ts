@@ -36,6 +36,16 @@ function resolveApiTarget(): string {
   return fallback;
 }
 
+// Segundo destino de respaldo cuando el primario falla en desarrollo
+function resolveApiFallbackTarget(primary: string): string | null {
+  // Si ya es remoto, no tiene sentido intentar otro
+  if (/^https?:\/\//.test(primary) && !/localhost|127\.0\.0\.1/.test(primary)) {
+    return null;
+  }
+  // Apunta al backend remoto publicado en Railway
+  return 'https://backend-gohost-production.up.railway.app';
+}
+
 /**
  * Proxy de API: reenvía todas las peticiones que comienzan con /api.
  * En desarrollo, se envía al backend en http://localhost:8081
@@ -45,8 +55,7 @@ function resolveApiTarget(): string {
 app.use('/api', (req, res) => {
   // Resuelve el destino vía variable de entorno, con fallback sensible.
   const API_TARGET = resolveApiTarget();
-
-  const targetUrl = `${API_TARGET}${req.originalUrl}`;
+  const API_FALLBACK = resolveApiFallbackTarget(API_TARGET);
 
   const method = req.method;
   const headers: Record<string, string> = {};
@@ -78,39 +87,57 @@ app.use('/api', (req, res) => {
         ? undefined
         : (bodyBuffer.length ? bodyBuffer : undefined);
 
+      // Helper para intentar un destino
+      const doFetch = async (base: string) => {
+        const targetUrl = `${base}${req.originalUrl}`;
+        const response = await fetch(targetUrl, { method, headers, body });
+        return { response, targetUrl } as const;
+      };
+
       try {
-        const response = await fetch(targetUrl, {
-          method,
-          headers,
-          body
-        });
+        let { response, targetUrl } = await doFetch(API_TARGET);
+        // Si el primario devuelve 5xx y tenemos fallback, intentar remoto
+        if (response.status >= 500 && API_FALLBACK) {
+          console.warn(`[SSR] API primario ${API_TARGET} respondió ${response.status}. Intentando fallback...`);
+          ({ response, targetUrl } = await doFetch(API_FALLBACK));
+        }
 
         res.status(response.status);
         response.headers.forEach((value, name) => {
           const lower = name.toLowerCase();
-          // No propagar content-encoding ni transfer-encoding para evitar conflictos
-          // con Content-Length que Express establece en res.send(Buffer).
-          if (lower === 'content-encoding' || lower === 'transfer-encoding') {
-            return;
-          }
+          if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
           res.setHeader(name, value);
         });
-
         const arrayBuf = await response.arrayBuffer();
         res.send(Buffer.from(arrayBuf));
       } catch (err: any) {
-        const detail = {
-          url: targetUrl,
-          message: err?.message,
-          name: err?.name,
-          code: err?.code ?? err?.cause?.code,
-          cause: err?.cause?.message ?? String(err?.cause ?? ''),
-        };
-        console.error('API proxy error:', detail);
-        res.status(502).json({
-          error: 'Bad Gateway',
-          detail: err?.message ?? 'Proxy failed'
-        });
+        // Intentar un fetch de respaldo si falló por red/ECONNREFUSED
+        if (API_FALLBACK) {
+          try {
+            console.warn(`[SSR] API primario ${API_TARGET} falló (${err?.code || err?.message}). Intentando fallback...`);
+            const { response } = await doFetch(API_FALLBACK);
+            res.status(response.status);
+            response.headers.forEach((value, name) => {
+              const lower = name.toLowerCase();
+              if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
+              res.setHeader(name, value);
+            });
+            const arrayBuf = await response.arrayBuffer();
+            res.send(Buffer.from(arrayBuf));
+            return;
+          } catch (err2: any) {
+            const detail = {
+              primary: API_TARGET,
+              fallback: API_FALLBACK,
+              message: err2?.message,
+              name: err2?.name,
+              code: err2?.code ?? err2?.cause?.code,
+              cause: err2?.cause?.message ?? String(err2?.cause ?? ''),
+            };
+            console.error('API proxy error (fallback):', detail);
+          }
+        }
+        res.status(502).json({ error: 'Bad Gateway', detail: err?.message ?? 'Proxy failed' });
       }
     })
     .on('error', (err) => {
