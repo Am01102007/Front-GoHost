@@ -467,9 +467,21 @@ export class ListingsService {
     console.log('⚡ ListingsService: Update optimista aplicado');
 
     const url = `${this.API_BASE}/alojamientos`;
+    // Normalizar servicios al enum esperado por el backend
+    const SERVICE_ENUMS = [
+      'JACUZZI','ESTACIONAMIENTO','SPA','COCINA','RECEPCION_24H','PARRILLA','SECADORA','SERVICIO_LIMPIEZA','JARDIN','TELEVISION','PISCINA','BALCON','CALEFACCION','TERRAZA','LAVADORA','GIMNASIO','ASCENSOR','AIRE_ACONDICIONADO','DESAYUNO_INCLUIDO','MASCOTAS_PERMITIDAS','NETFLIX','WIFI','ACCESO_DISCAPACITADOS','SEGURIDAD_24H'
+    ];
+    const normalizeServicio = (s: string): string => {
+      const upper = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+      const repl = upper.replace(/\s+/g, '_').replace(/-/g, '_');
+      return repl;
+    };
+    const normalizedServicios = Array.isArray(dto.servicios)
+      ? dto.servicios.map(normalizeServicio).filter(v => SERVICE_ENUMS.includes(v))
+      : [];
     const basePayload = {
       ...dto,
-      servicios: dto.servicios ?? [],
+      servicios: normalizedServicios,
       anfitrionId: user?.id || undefined
     };
 
@@ -511,36 +523,7 @@ export class ListingsService {
       }),
       catchError(err => {
         console.error('❌ ListingsService.create error', err);
-        // Si el backend rechaza el Blob JSON (400 por JSON mal formado), reintentar con string
-        const shouldRetryWithString = err?.status === 400;
-        if (shouldRetryWithString) {
-          console.warn('⚠️ Reintentando creación con data como string JSON en FormData');
-          const fd = new FormData();
-          fd.append('data', JSON.stringify(restPayload));
-          if (filesToSend && filesToSend.length > 0) {
-            filesToSend.forEach((file) => fd.append('files', file, file.name));
-          }
-          return this.http.post<any>(url, fd).pipe(
-            map(res => this.toListing(res)),
-            tap(created => {
-              const updatedListings = this.listings().map(listing => listing.id === tempId ? created : listing);
-              this.listings.set(updatedListings);
-              this.dataSyncService.notifyDataChange('listings', 'create', created, created.id, 'create');
-              console.log(`✅ ListingsService: Alojamiento creado exitosamente con ID ${created.id} (retry)`);
-            }),
-            catchError(err2 => {
-              console.error('❌ Retry también falló:', err2);
-              // Revertir optimistic update: remover el alojamiento temporal
-              const revertedListings = this.listings().filter(listing => listing.id !== tempId);
-              this.listings.set(revertedListings);
-              console.log('🔄 ListingsService: Optimistic update revertido tras error en retry');
-              return throwError(() => err2);
-            }),
-            finalize(() => {
-              this.dataSyncService.setLoading('listings', false);
-            })
-          );
-        }
+        // No reintentamos con string: el backend exige JSON en 'data' y enum válido.
 
         // Revertir optimistic update: remover el alojamiento temporal
         const revertedListings = this.listings().filter(listing => listing.id !== tempId);
