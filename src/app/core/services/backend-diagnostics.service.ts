@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, forkJoin, map, of, timeout } from 'rxjs';
 import { NotificationsService } from './notifications.service';
+import { API_BASE } from '../../core/config';
 
 interface CheckResult {
   name: string;
@@ -18,6 +19,16 @@ export class BackendDiagnosticsService {
 
   /** Ejecuta diagnósticos básicos al iniciar la app. */
   runOnStartup(): void {
+    // No ejecutar diagnósticos en SSR para evitar llamadas durante build/render.
+    if (typeof window === 'undefined') {
+      console.warn('[diagnostics] omitido: SSR activo');
+      return;
+    }
+    // Si el backend no está claramente configurado, omitir diagnósticos.
+    if (!this.isBackendConfigured()) {
+      console.warn('[diagnostics] omitido: backend no configurado (API_BASE=', API_BASE, ')');
+      return;
+    }
     this.runChecks().subscribe(({ results }) => {
       const allOk = results.every(r => r.ok);
       const summary = results.map(r => `${r.name}: ${r.ok ? 'OK' : 'FAIL'}${r.status ? ` (${r.status})` : ''}`).join(' | ');
@@ -34,12 +45,22 @@ export class BackendDiagnosticsService {
   /** Ejecuta health check y endpoints clave (público y protegido). */
   runChecks() {
     const t0 = Date.now();
-    const health$ = this.probe('Health', '/actuator/health');
-    const listings$ = this.probe('Alojamientos', '/api/alojamientos');
-    const bookingsMine$ = this.probe('Reservas propias', '/api/reservas/mias');
+    // Usamos API_BASE (inyectado vía /env.js) para hacer llamadas directas al backend
+    const health$ = this.probe('Health', `${API_BASE}/alojamientos?page=0&size=1`);
+    const listings$ = this.probe('Alojamientos', `${API_BASE}/alojamientos`);
+    const bookingsMine$ = this.probe('Reservas propias', `${API_BASE}/reservas/mias`);
 
     return forkJoin([health$, listings$, bookingsMine$]).pipe(
-      map(results => ({ results, totalMs: Date.now() - t0 }))
+      map(results => {
+        // Tratamos 401 en endpoint protegido como estado esperado si no hay sesión
+        const normalized = results.map(r => {
+          if (r.name === 'Reservas propias' && r.status === 401) {
+            return { ...r, ok: true, detail: 'Auth requerida (no iniciada)' };
+          }
+          return r;
+        });
+        return { results: normalized, totalMs: Date.now() - t0 };
+      })
     );
   }
 
@@ -65,5 +86,12 @@ export class BackendDiagnosticsService {
         } as CheckResult);
       })
     );
+  }
+
+  private isBackendConfigured(): boolean {
+    // Consideramos configurado si API_BASE no es 'undefined' y si hay señal de configuración runtime.
+    const env = (globalThis as any).__ENV__?.API_BASE_URL;
+    if (!env || env === 'undefined') return false;
+    return true;
   }
 }

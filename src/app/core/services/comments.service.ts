@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 export interface CommentItem {
   id: string;
   listingId: string;
+  bookingId?: string; // Reserva asociada (evitar reseñas duplicadas por reserva)
+  userId?: string; // ID del usuario que comentó
   user?: string;
   rating: number; // 1..5
   text: string;
@@ -35,10 +37,12 @@ export class CommentsService {
    * @param data Contenido del comentario y calificación.
    * @returns El comentario creado.
    */
-  add(listingId: string, data: { text: string; rating: number; user?: string }): CommentItem {
+  add(listingId: string, data: { text: string; rating: number; user?: string; userId?: string; bookingId?: string }): CommentItem {
     const item: CommentItem = {
       id: uuidv4(),
       listingId,
+      bookingId: data.bookingId,
+      userId: data.userId,
       text: data.text.trim(),
       rating: Math.max(1, Math.min(5, data.rating)),
       user: data.user,

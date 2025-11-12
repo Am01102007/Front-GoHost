@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, computed } from '@angular/core';
+import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { ListingsService } from '../../../core/services/listings.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { Booking } from '../../../core/models/booking.model';
 
 @Component({
   selector: 'app-host-bookings',
@@ -18,7 +19,7 @@ export class HostBookingsComponent implements OnInit {
   private readonly listings = inject(ListingsService);
   private readonly notifications = inject(NotificationsService);
   private readonly auth = inject(AuthService);
-  private readonly hostBookings = signal<import('../../../core/models/booking.model').Booking[]>([]);
+  private readonly hostBookings = signal<Booking[]>([]);
 
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
 
@@ -41,24 +42,24 @@ export class HostBookingsComponent implements OnInit {
   });
 
   readonly all = computed(() => {
-    const ids = this.myListingIds();
+    // Mostrar todas las reservas devueltas por el backend para el anfitrión.
+    // Si los alojamientos no han cargado, no filtramos por IDs para evitar lista vacía.
     return this.hostBookings()
-      .filter(b => ids.includes(b.listingId))
-      .map(b => ({ ...b, listing: this.listings.getById(b.listingId) }));
+      .map((b: Booking) => ({ ...b, listing: this.listings.getById(b.listingId) }));
   });
 
   get pendientes() {
-    return this.all().filter(b => b.estado === 'pendiente');
+    return this.all().filter((b: any) => b.estado === 'pendiente');
   }
 
   get activas() {
     // Activas = confirmadas/pagadas y futuras
     const now = new Date();
-    return this.all().filter(b => b.estado !== 'cancelado' && new Date(b.fechaInicio) >= now);
+    return this.all().filter((b: any) => b.estado !== 'cancelado' && new Date(b.fechaInicio) >= now);
   }
 
   get canceladas() {
-    return this.all().filter(b => b.estado === 'cancelado');
+    return this.all().filter((b: any) => b.estado === 'cancelado');
   }
 
   get items() {

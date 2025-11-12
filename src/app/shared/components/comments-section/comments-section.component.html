@@ -22,6 +22,9 @@
     </section>
 
     <form [formGroup]="form" (ngSubmit)="add()" class="form">
+      <p *ngIf="!canComment()" class="notice" style="margin:8px 0; color:#b91c1c;">
+        Ya registraste reseña para tus reservas elegibles o no tienes una estadía completada.
+      </p>
       <label>Calificación
         <select formControlName="rating">
           <option *ngFor="let r of [1,2,3,4,5]" [value]="r">{{ r }}</option>
@@ -31,7 +34,7 @@
         <textarea rows="3" formControlName="text" placeholder="Escribe tu opinión"></textarea>
       </label>
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid" class="btn btn-primary">Agregar</button>
+        <button type="submit" [disabled]="form.invalid || !canComment()" class="btn btn-primary">Agregar</button>
         <button type="button" (click)="toggle()" class="btn btn-ghost">Cerrar</button>
       </div>
     </form>

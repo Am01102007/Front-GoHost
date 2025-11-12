@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,7 +17,7 @@ export class ResetPasswordComponent {
   auth = inject(AuthService);
   notify = inject(NotificationsService);
   
-  step: 'request' | 'confirm' | 'success' = 'request';
+  step = signal<'request' | 'confirm' | 'success'>('request');
   loading = false;
 
   form = this.fb.group({ 
@@ -42,7 +42,7 @@ export class ResetPasswordComponent {
     this.auth.resetPassword(email).subscribe({
       next: () => {
         this.loading = false;
-        this.step = 'confirm';
+        this.step.set('confirm');
         this.notify.success('Código enviado', 'Revisa tu correo electrónico.');
       },
       error: (err) => {
@@ -61,7 +61,7 @@ export class ResetPasswordComponent {
     this.auth.confirmResetPassword(token, nuevaPassword).subscribe({
       next: () => {
         this.loading = false;
-        this.step = 'success';
+        this.step.set('success');
         this.notify.success('Contraseña restablecida', 'Ya puedes iniciar sesión con tu nueva contraseña.');
       },
       error: (err) => {
@@ -72,7 +72,7 @@ export class ResetPasswordComponent {
   }
 
   goBack() {
-    this.step = 'request';
+    this.step.set('request');
     this.confirmForm.reset();
   }
 }

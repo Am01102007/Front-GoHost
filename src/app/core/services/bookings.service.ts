@@ -69,10 +69,9 @@ export class BookingsService {
    * Se recalcula automáticamente cuando cambian las reservas.
    */
   readonly myBookings = computed(() => {
-    return this.bookings().filter(booking => 
-      // Filtrar por usuario actual si está disponible
-      true // TODO: Implementar filtro por usuario actual
-    );
+    const uid = this.auth.currentUser?.()?.id;
+    if (!uid) return [] as Booking[];
+    return this.bookings().filter(booking => booking.userId === uid);
   });
 
   /**
@@ -189,6 +188,18 @@ export class BookingsService {
 
   /** Listar reservas del huésped autenticado */
   fetchMine(page = 0, size = 10, filtros?: { fechaInicio?: string; fechaFin?: string; estado?: 'pendiente' | 'pagado' | 'cancelado' }): Observable<Booking[]> {
+    // Evitar llamadas si no hay sesión/token para prevenir 401 innecesarios
+    try {
+      const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('auth_token');
+      const isAuth = this.auth.isAuthenticated();
+      if (!hasToken || !isAuth) {
+        console.warn('BookingsService.fetchMine: sin sesión, no se solicita al backend');
+        this.bookings.set([]);
+        return of([]);
+      }
+    } catch {
+      // En SSR donde no hay localStorage, proceder normalmente
+    }
     const params: any = { page, size };
     if (filtros?.fechaInicio) params.fechaInicio = filtros.fechaInicio;
     if (filtros?.fechaFin) params.fechaFin = filtros.fechaFin;

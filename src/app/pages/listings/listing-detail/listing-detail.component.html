@@ -96,12 +96,12 @@
       <!-- Reseñas -->
       <div class="reviews-section">
         <h3>Reseñas</h3>
-        <app-comments-section [listingId]="listing.id"></app-comments-section>
+        <app-comments-section #commentsRef [listingId]="listing.id"></app-comments-section>
       </div>
     </div>
 
-    <!-- Columna derecha - Tarjeta de reserva -->
-    <div class="booking-sidebar">
+    <!-- Columna derecha - Tarjeta de reserva (oculta para anfitriones) -->
+    <div class="booking-sidebar" *ngIf="!auth.isHost()">
       <div class="booking-card">
         <div class="booking-header">
           <span class="booking-price">${{ listing.precioPorNoche }}</span>

@@ -66,7 +66,7 @@ export class BookingDetailComponent implements OnInit {
     this.bookingsSvc.updateStatus(b.id, 'cancelado').subscribe({
       next: (updated) => {
         this.booking.set(updated);
-        this.notifications.warning('Reserva rechazada');
+        this.notifications.notify('warning', 'Reserva rechazada');
       },
       error: () => this.notifications.error('Error al rechazar la reserva')
     });
@@ -78,7 +78,7 @@ export class BookingDetailComponent implements OnInit {
     this.bookingsSvc.cancelar(b.id).subscribe({
       next: () => {
         this.booking.set({ ...(b as any), estado: 'cancelado' });
-        this.notifications.warning('Reserva cancelada');
+        this.notifications.notify('warning', 'Reserva cancelada');
       },
       error: () => this.notifications.error('Error al cancelar la reserva')
     });
@@ -100,4 +100,3 @@ export class BookingDetailComponent implements OnInit {
     this.router.navigate(['/reservas-anfitrion']);
   }
 }
-

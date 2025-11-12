@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ListingsService } from '../../../core/services/listings.service';
@@ -16,6 +16,7 @@ export class BookingHistoryComponent implements OnInit {
   bookingsSvc = inject(BookingsService);
   auth = inject(AuthService);
   listings = inject(ListingsService);
+  router = inject(Router);
 
   filter: 'todas' | 'completadas' | 'proximas' = 'todas';
 
@@ -78,8 +79,8 @@ export class BookingHistoryComponent implements OnInit {
     return booking.estado === 'pagado' && new Date(booking.fechaFin) < new Date();
   }
 
-  writeReview(bookingId: string): void {
-    // Implementar funcionalidad de reseña
-    console.log('Escribir reseña para booking:', bookingId);
+  writeReview(listingId: string): void {
+    if (!listingId) return;
+    this.router.navigate(['/alojamientos', listingId], { queryParams: { openComments: 'true' } });
   }
 }

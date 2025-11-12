@@ -591,28 +591,99 @@ export class AuthService {
     this.loading.set(true);
     this.error.set(null);
 
-    const url = `${this.API_URL}/usuarios/me`;
+    const primaryUrl = `${this.API_URL}/usuarios/me`;
+    const fallbackUrl = `${this.API_URL}/auth/me`;
     const payload: any = {
       nombre: values.nombre ?? this.currentUser()!.nombre,
       apellido: values.apellido ?? this.currentUser()!.apellido,
       email: values.email ?? this.currentUser()!.email,
-      telefono: values.telefono ?? this.currentUser()!.telefono
+      telefono: values.telefono ?? this.currentUser()!.telefono,
+      descripcion: values.descripcion ?? (this.currentUser() as any)?.descripcion ?? '',
+      telefonoCodigo: values.telefonoCodigo ?? (this.currentUser() as any)?.telefonoCodigo ?? ''
     };
 
-    return this.http.put<any>(url, payload).pipe(
+    const handle = (res: any) => this.mapToUser(res.user || res);
+
+    return this.http.put<any>(primaryUrl, payload).pipe(
       map(res => this.mapToUser(res.user || res)),
       tap(user => {
-        // Merge con el usuario actual para mantener campos no devueltos
         const merged = { ...this.currentUser()!, ...user };
         this.currentUser.set(merged);
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
         console.log('✅ Perfil de usuario actualizado');
       }),
+      // Reconsultar el perfil para sincronizar con datos canónicos del backend
       catchError(err => {
-        console.error('❌ AuthService.updateProfile error:', err);
-        this.error.set('Error al actualizar perfil');
-        return throwError(() => err);
+        // Intentar fallback si el endpoint primario no existe
+        return this.http.put<any>(fallbackUrl, payload).pipe(
+          map(handle),
+          tap(user => {
+            const merged = { ...this.currentUser()!, ...user };
+            this.currentUser.set(merged);
+            this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
+            console.log('✅ Perfil de usuario actualizado (fallback)');
+          }),
+          catchError(err2 => {
+            console.error('❌ AuthService.updateProfile error:', err, err2);
+            this.error.set('Error al actualizar perfil');
+            return throwError(() => err2);
+          })
+        );
       }),
+      tap(() => {
+        // Cargar perfil canónico después de actualizar para evitar desajustes
+        this.loadProfile().subscribe({
+          next: (u) => {
+            this.currentUser.set(u);
+            this.dataSyncService.notifyDataChange('users', 'update', u, u.id, 'loadProfile-sync');
+          },
+          error: () => {}
+        });
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /** Cambia la contraseña del usuario autenticado */
+  changePassword(passwordActual: string, passwordNueva: string): Observable<boolean> {
+    if (!this.currentUser()) {
+      return throwError(() => new Error('No hay usuario autenticado'));
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    const primaryUrl = `${this.API_URL}/usuarios/me/password`;
+    const fallbackUrl = `${this.API_URL}/auth/me/password`;
+
+    const payloadVariants = [
+      // Variante más común en español similar a confirmResetPassword
+      { passwordActual, nuevaPassword: passwordNueva },
+      // Variante usada en otros proyectos
+      { oldPassword: passwordActual, newPassword: passwordNueva },
+      // Variante mínima usada previamente
+      { actual: passwordActual, nueva: passwordNueva }
+    ];
+
+    const ok = () => true as boolean;
+
+    const tryPut = (url: string, variantIndex = 0): Observable<boolean> => {
+      if (variantIndex >= payloadVariants.length) {
+        return throwError(() => new Error('No se pudo cambiar contraseña: payloads incompatibles'));
+      }
+      const body = payloadVariants[variantIndex];
+      return this.http.put<any>(url, body).pipe(
+        map(() => ok()),
+        tap(() => console.log(`✅ Contraseña actualizada (${url} variante #${variantIndex + 1})`)),
+        catchError(err => {
+          // Probar siguiente variante
+          return tryPut(url, variantIndex + 1);
+        })
+      );
+    };
+
+    return tryPut(primaryUrl).pipe(
+      catchError(_ => tryPut(fallbackUrl)),
       finalize(() => this.loading.set(false))
     );
   }

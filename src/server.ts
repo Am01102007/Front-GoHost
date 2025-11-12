@@ -22,15 +22,30 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
+// Resuelve el destino del backend para el proxy de API.
+// En producción (Railway), usa el dominio público del backend;
+// en desarrollo, apunta a localhost.
+function resolveApiTarget(): string {
+  const envTarget = process.env['API_TARGET']
+    || process.env['VITE_API_BASE_URL']
+    || process.env['REACT_APP_API_BASE_URL'];
+  if (envTarget) return envTarget;
+  const fallback = process.env['NODE_ENV'] === 'production'
+    ? 'https://backend-gohost-production.up.railway.app'
+    : 'http://127.0.0.1:8081';
+  return fallback;
+}
+
 /**
  * Proxy de API: reenvía todas las peticiones que comienzan con /api.
- * En desarrollo, se envía al proxy simple con mocks en http://localhost:4004
+ * En desarrollo, se envía al backend en http://localhost:8081
  * para evitar 502 cuando el backend no está disponible.
  * Debe estar registrado ANTES de los handlers de estáticos y SSR.
  */
 app.use('/api', (req, res) => {
-  // Permite configurar el destino vía variable de entorno; por defecto usar el proxy simple.
-  const API_TARGET = process.env['API_TARGET'] || 'http://localhost:4004';
+  // Resuelve el destino vía variable de entorno, con fallback sensible.
+  const API_TARGET = resolveApiTarget();
+
   const targetUrl = `${API_TARGET}${req.originalUrl}`;
 
   const method = req.method;
@@ -127,6 +142,19 @@ app.use(
 );
 
 /**
+ * Endpoint de configuración runtime: /env.js
+ * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
+ */
+app.get('/env.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
+  // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
+  const apiBaseUrl = '/api';
+  const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, { API_BASE_URL: '${apiBaseUrl}' });`;
+  res.send(payload);
+});
+
+/**
  * Handle all other requests by rendering the Angular application.
  */
 app.use((req, res, next) => {
@@ -148,8 +176,9 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     if (error) {
       throw error;
     }
-
+    const target = resolveApiTarget();
     console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`[SSR] API proxy target: ${target}`);
   });
 }
 

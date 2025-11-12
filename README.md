@@ -57,3 +57,31 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Despliegue en Railway
+
+Esta app está preparada para SSR (Angular Universal) y proxy de API en producción. Para que funcione correctamente en Railway, configura las siguientes variables en el servicio del frontend:
+
+- `API_TARGET`: URL base del backend (ej.: `https://<tu-backend>.up.railway.app`)
+- Alternativas aceptadas: `VITE_API_BASE_URL` o `REACT_APP_API_BASE_URL` (cualquiera de ellas funcionará como `API_TARGET`).
+
+Notas importantes:
+- El servidor SSR expone `/env.js` para inyectar `window.__ENV__.API_BASE_URL` en el cliente.
+- Si `API_TARGET` no está configurado, las llamadas a `/api/*` devolverán `503 Service Unavailable` para evitar errores engañosos en build o SSR.
+- Configura CORS en el backend para permitir el dominio del frontend: `CORS_ALLOWED_ORIGINS="https://<tu-frontend>.up.railway.app"`.
+
+### Variables recomendadas en Backend (Railway)
+
+- `PORT`: asignado por Railway automáticamente.
+- `CORS_ALLOWED_ORIGINS`: dominio público del frontend Railway.
+- `JWT_SECRET`: secreto para firma de tokens.
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`: SMTP si el backend envía correos.
+
+### Verificación rápida
+
+1. En el servicio frontend, añade `API_TARGET` apuntando al backend.
+2. Despliega y abre el frontend: verifica que `/env.js` contiene `API_BASE_URL` correcto.
+3. Prueba un endpoint público: `GET https://<tu-frontend>.up.railway.app/api/alojamientos?page=0&size=1`.
+4. Si recibes `503`, revisa que `API_TARGET` esté definido y accesible.
+
+Referencias: https://docs.railway.com/

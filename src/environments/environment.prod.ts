@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8080/api'
+  // Usar el proxy '/api' gestionado por el SSR en producción
+  apiUrl: '/api'
 };
