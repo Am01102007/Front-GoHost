@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, Observable, tap, throwError, of, finalize } from 'rxjs';
+import { catchError, map, Observable, tap, throwError, of, finalize, forkJoin, switchMap } from 'rxjs';
 import { Listing } from '../models/listing.model';
 import { API_BASE } from '../config';
 import { DataSyncService } from './data-sync.service';
@@ -269,21 +269,36 @@ export class ListingsService {
       tap(serverListings => {
         // Filtrar eliminados para que no aparezcan
         const deleted = new Set(this.deletedIds());
-        const filtered = serverListings.filter(l => !deleted.has(l.id));
-        this.listings.set(filtered);
+        const filteredServer = serverListings.filter(l => !deleted.has(l.id));
+
+        // Merge con alojamientos locales propios del anfitrión,
+        // para evitar que un alta reciente desaparezca si el backend tarda.
+        const current = this.listings();
+        const userId = this.auth.currentUser()?.id;
+        const localMine = current.filter(l => !!userId && l.anfitrionId === String(userId) && !deleted.has(l.id));
+
+        const byId = new Map<string, Listing>();
+        // Preferir versión del servidor si existe
+        filteredServer.forEach(l => byId.set(l.id, l));
+        localMine.forEach(l => { if (!byId.has(l.id)) byId.set(l.id, l); });
+        const merged = Array.from(byId.values());
+
+        this.listings.set(merged);
 
         // Notificar cambio y marcar como actualizado
         this.dataSyncService.markAsUpdated('listings');
-        this.dataSyncService.notifyDataChange('listings', 'fetch', filtered, undefined, 'fetchForHost');
+        this.dataSyncService.notifyDataChange('listings', 'fetch', merged, undefined, 'fetchForHost');
 
-        console.log(`✅ ListingsService: ${filtered.length} alojamientos del anfitrión cargados`);
+        console.log(`✅ ListingsService: ${merged.length} alojamientos del anfitrión cargados (merge)`);
       }),
       catchError(err => {
         console.error('❌ ListingsService.fetchForHost error', err);
-        // No reutilizar listados previos: el dashboard de anfitrión
-        // debe mostrar solo datos propios o vacío si hay error/401.
-        this.listings.set([]);
-        return of([]);
+        // Fallback: mantener datos locales propios del anfitrión
+        const userId = this.auth.currentUser()?.id;
+        const deleted = new Set(this.deletedIds());
+        const localMine = this.listings().filter(l => !!userId && l.anfitrionId === String(userId) && !deleted.has(l.id));
+        this.listings.set(localMine);
+        return of(localMine);
       }),
       finalize(() => {
         this.dataSyncService.setLoading('listings', false);
@@ -479,36 +494,57 @@ export class ListingsService {
     const normalizedServicios = Array.isArray(dto.servicios)
       ? dto.servicios.map(normalizeServicio).filter(v => SERVICE_ENUMS.includes(v))
       : [];
-    const basePayload = {
-      ...dto,
+    const basePayloadNoFotos = {
+      titulo: dto.titulo,
+      descripcion: dto.descripcion,
+      ciudad: dto.ciudad,
+      pais: dto.pais,
+      calle: dto.calle,
+      zip: dto.zip,
+      precioNoche: dto.precioNoche,
+      capacidad: dto.capacidad,
       servicios: normalizedServicios,
       anfitrionId: user?.id || undefined
+    } as any;
+
+    // Detectar archivos a subir (enviar a /images primero)
+    let filesToUpload: File[] | undefined;
+    if (Array.isArray(dto.fotos) && dto.fotos.length > 0 && dto.fotos[0] instanceof File) {
+      filesToUpload = dto.fotos as File[];
+    }
+    if (!filesToUpload && files && files.length > 0) {
+      filesToUpload = files;
+    }
+
+    const uploadImage = (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      return this.http.post<any>(`${this.API_BASE}/images`, fd).pipe(
+        map(res => res?.secureUrl || res?.secure_url || res?.url || ''),
+        catchError(() => of(''))
+      );
     };
 
-    // Detectar archivos a enviar: dto.fotos como File[] o el segundo parámetro 'files'
-    let filesToSend: File[] | undefined;
-    if (Array.isArray(dto.fotos) && dto.fotos.length > 0 && dto.fotos[0] instanceof File) {
-      filesToSend = dto.fotos as File[];
-    }
-    if (!filesToSend && files && files.length > 0) {
-      filesToSend = files;
-    }
+    const createWithFotos = (fotoUrls: string[]) => {
+      const payload = { ...basePayloadNoFotos, fotos: fotoUrls };
+      return this.http.post<any>(url, payload);
+    };
 
-    // Construir cuerpo de la petición: SIEMPRE multipart/form-data con 'data' y opcionalmente 'files'
-    // Preparar el payload sin 'fotos' para el part 'data'
-    const { fotos: _ignoredFotos, ...restPayload } = basePayload as any;
-    const formData = new FormData();
-    // Enviar JSON como Blob 'application/json' bajo la clave 'data'
-    formData.append('data', new Blob([JSON.stringify(restPayload)], { type: 'application/json' }));
-    // Adjuntar archivos si existen
-    if (filesToSend && filesToSend.length > 0) {
-      filesToSend.forEach((file) => {
-        formData.append('files', file, file.name);
-      });
-    }
-    const body: any = formData;
+    const create$ = filesToUpload && filesToUpload.length > 0
+      ? forkJoin(filesToUpload.map(uploadImage)).pipe(
+          map(urls => urls.filter(u => !!u)),
+          // Si por alguna razón no hubo URLs, usar las previsualizaciones como fallback (solo optimismo)
+          tap(urls => {
+            if (urls.length === 0) {
+              console.warn('⚠️ No se obtuvieron URLs al subir imágenes; se enviará sin fotos');
+            }
+          }),
+          // Hacer POST de creación con URLs
+          switchMap(urls => createWithFotos(urls))
+        )
+      : this.http.post<any>(url, { ...basePayloadNoFotos, fotos: Array.isArray(dto.fotos) ? dto.fotos : [] });
 
-    return this.http.post<any>(url, body).pipe(
+    return create$.pipe(
       map(res => this.toListing(res)),
       tap(created => {
         // Reemplazar el alojamiento temporal con el real del servidor

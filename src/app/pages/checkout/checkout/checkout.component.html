@@ -2,7 +2,7 @@
 <div class="checkout-grid">
   <form [formGroup]="form" class="form">
     <h3>Datos de la reserva</h3>
-    <label>ID alojamiento<input formControlName="listingId" placeholder="ej: a1"/></label>
+    <!-- ID del alojamiento se completa automáticamente -->
     <label>Fecha inicio<input type="date" formControlName="fechaInicio" /></label>
     <label>Fecha fin<input type="date" formControlName="fechaFin" /></label>
     <label>Huéspedes<input type="number" formControlName="huespedes" /></label>
@@ -22,6 +22,6 @@
       <button class="btn ghost" (click)="reservarPendiente()" [disabled]="form.invalid">Pagar luego</button>
       <button class="btn danger" (click)="cancelar()">Cancelar</button>
     </div>
-    <p class="hint">Ingresa el ID del alojamiento (ej: a1, a2).</p>
+    <p class="hint">Completa tus fechas y huéspedes para continuar.</p>
   </aside>
 </div>

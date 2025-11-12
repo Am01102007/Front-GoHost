@@ -141,11 +141,25 @@ export class BookingsService {
   }
 
   private mapEstado(estado: string): Booking['estado'] {
-    switch (estado) {
-      case 'PENDIENTE': return 'pendiente';
-      case 'CONFIRMADA': return 'pagado';
-      case 'CANCELADA': return 'cancelado';
-      default: return 'pendiente';
+    const normalized = String(estado || '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_');
+
+    switch (normalized) {
+      case 'PENDIENTE':
+      case 'SOLICITADA':
+      case 'RESERVADA':
+        return 'pendiente';
+      case 'CONFIRMADA':
+      case 'PAGADA':
+      case 'EN_CURSO':
+        return 'pagado';
+      case 'CANCELADA':
+      case 'RECHAZADA':
+        return 'cancelado';
+      default:
+        return 'pendiente';
     }
   }
 
@@ -157,13 +171,15 @@ export class BookingsService {
   private toBooking(dto: any): Booking {
     return {
       id: String(dto.id),
-      listingId: String(dto.alojamientoId),
-      userId: String(dto.huespedId),
-      fechaInicio: String(dto.checkIn),
-      fechaFin: String(dto.checkOut),
-      huespedes: (dto.numeroHuespedes ?? 1),
-      total: 0,
-      estado: this.mapEstado(String(dto.estado))
+      listingId: String(dto.alojamientoId ?? dto.listingId ?? dto.alojamiento?.id ?? ''),
+      userId: String(
+        dto.huespedId ?? dto.huesped?.id ?? dto.usuarioId ?? dto.userId ?? ''
+      ),
+      fechaInicio: String(dto.checkIn ?? dto.fechaInicio ?? dto.inicio ?? ''),
+      fechaFin: String(dto.checkOut ?? dto.fechaFin ?? dto.fin ?? ''),
+      huespedes: (dto.numeroHuespedes ?? dto.huespedes ?? 1),
+      total: Number(dto.total ?? dto.precioTotal ?? 0),
+      estado: this.mapEstado(dto.estado)
     };
   }
 

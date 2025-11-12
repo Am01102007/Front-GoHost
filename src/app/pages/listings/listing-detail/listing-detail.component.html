@@ -130,7 +130,7 @@
             </select>
           </div>
           
-          <button class="btn btn-primary" [routerLink]="['/checkout']">
+          <button class="btn btn-primary" [routerLink]="['/checkout']" [queryParams]="{ listingId: listing?.id }">
             Reservar ahora
           </button>
           

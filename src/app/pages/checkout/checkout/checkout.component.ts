@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-checkout',
@@ -17,6 +18,7 @@ export class CheckoutComponent {
   bookings = inject(BookingsService);
   auth = inject(AuthService);
   notifications = inject(NotificationsService);
+  route = inject(ActivatedRoute);
 
   form = this.fb.group({
     listingId: ['', Validators.required],
@@ -45,6 +47,18 @@ export class CheckoutComponent {
         this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
       }
     });
+  }
+
+  constructor() {
+    // Prefija automáticamente el ID desde query params o estado de navegación
+    try {
+      const qp = this.route.snapshot.queryParamMap.get('listingId');
+      const st: any = (history?.state ?? {});
+      const id = qp || st?.listingId;
+      if (id) {
+        this.form.get('listingId')?.setValue(id);
+      }
+    } catch {}
   }
 
   reservarPendiente() { this.crearReserva('pendiente'); }
