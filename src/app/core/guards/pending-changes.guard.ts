@@ -13,7 +13,9 @@ type WithForm = { form?: { dirty?: boolean }; } & Record<string, any>;
 export const pendingChangesGuard: CanDeactivateFn<WithForm> = (component) => {
   const notifications = inject(NotificationsService);
   const isDirty = !!component?.form?.dirty;
+
   if (!isDirty) return true;
+
   return notifications.confirm(
     'Cambios sin guardar',
     'Tienes cambios sin guardar. ¿Seguro que quieres salir?'
