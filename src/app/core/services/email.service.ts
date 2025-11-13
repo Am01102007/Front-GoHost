@@ -108,8 +108,17 @@ export class EmailService {
   /** Envía correo de bienvenida tras registro */
   async sendWelcome(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_WELCOME) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_WELCOME, params); } catch {}
+    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_WELCOME) {
+      console.warn('EmailJS: claves/IDs faltantes, no se envía welcome', {
+        canSend: this.canSend,
+        serviceId: EMAILJS_SERVICE_ID,
+        templateId: EMAILJS_TEMPLATE_ID_WELCOME,
+      });
+      return;
+    }
+    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_WELCOME, params); } catch (err) {
+      console.error('EmailJS: error enviando correo de bienvenida', err);
+    }
   }
 
   /** Envía correo de "perfil actualizado" */
