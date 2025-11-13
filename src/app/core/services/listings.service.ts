@@ -507,7 +507,7 @@ export class ListingsService {
       anfitrionId: user?.id || undefined
     } as any;
 
-    // Detectar archivos a subir (enviar a /images primero)
+    // Detectar archivos a enviar en multipart/form-data (parte 'files')
     let filesToUpload: File[] | undefined;
     if (Array.isArray(dto.fotos) && dto.fotos.length > 0 && dto.fotos[0] instanceof File) {
       filesToUpload = dto.fotos as File[];
@@ -516,33 +516,25 @@ export class ListingsService {
       filesToUpload = files;
     }
 
-    const uploadImage = (file: File) => {
-      const fd = new FormData();
-      fd.append('file', file);
-      return this.http.post<any>(`${this.API_BASE}/images`, fd).pipe(
-        map(res => res?.secureUrl || res?.secure_url || res?.url || ''),
-        catchError(() => of(''))
-      );
-    };
+    // Construir payload JSON base para la parte 'data'
+    const basePayload: any = { ...basePayloadNoFotos };
+    // Si NO hay archivos, incluir rutas/strings de fotos en el JSON
+    const hasStringFotos = Array.isArray(dto.fotos) && dto.fotos.length > 0 && typeof (dto.fotos as any)[0] === 'string';
+    if (!filesToUpload && hasStringFotos) {
+      basePayload.fotos = dto.fotos as string[];
+    }
 
-    const createWithFotos = (fotoUrls: string[]) => {
-      const payload = { ...basePayloadNoFotos, fotos: fotoUrls };
-      return this.http.post<any>(url, payload);
-    };
+    // Construir FormData con 'data' (JSON) y 'files' (imágenes)
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(basePayload)], { type: 'application/json' }));
+    if (filesToUpload && filesToUpload.length > 0) {
+      for (const file of filesToUpload) {
+        formData.append('files', file);
+      }
+    }
 
-    const create$ = filesToUpload && filesToUpload.length > 0
-      ? forkJoin(filesToUpload.map(uploadImage)).pipe(
-          map(urls => urls.filter(u => !!u)),
-          // Si por alguna razón no hubo URLs, usar las previsualizaciones como fallback (solo optimismo)
-          tap(urls => {
-            if (urls.length === 0) {
-              console.warn('⚠️ No se obtuvieron URLs al subir imágenes; se enviará sin fotos');
-            }
-          }),
-          // Hacer POST de creación con URLs
-          switchMap(urls => createWithFotos(urls))
-        )
-      : this.http.post<any>(url, { ...basePayloadNoFotos, fotos: Array.isArray(dto.fotos) ? dto.fotos : [] });
+    // Enviar SIEMPRE multipart/form-data para cumplir con el backend
+    const create$ = this.http.post<any>(url, formData);
 
     return create$.pipe(
       map(res => this.toListing(res)),
