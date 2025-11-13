@@ -14,3 +14,14 @@ export const EMAILJS_TEMPLATE_ID_WELCOME: string = (globalThis as any).__ENV__?.
 export const EMAILJS_TEMPLATE_ID_PROFILE_UPDATED: string = (globalThis as any).__ENV__?.EMAILJS_TEMPLATE_ID_PROFILE_UPDATED ?? '';
 // Mantener un único copy reutilizable: usar las mismas plantillas para huésped y anfitrión.
 
+// Proveedor de correo (emailjs | mailtrap)
+export const MAIL_PROVIDER: string = (globalThis as any).__ENV__?.MAIL_PROVIDER ?? 'emailjs';
+
+// Config SMTP para SMTP.js
+export const SMTP_HOST: string = (globalThis as any).__ENV__?.SMTP_HOST ?? '';
+export const SMTP_PORT: string = (globalThis as any).__ENV__?.SMTP_PORT ?? '';
+export const SMTP_USERNAME: string = (globalThis as any).__ENV__?.SMTP_USERNAME ?? '';
+export const SMTP_PASSWORD: string = (globalThis as any).__ENV__?.SMTP_PASSWORD ?? '';
+export const SMTP_FROM_EMAIL: string = (globalThis as any).__ENV__?.SMTP_FROM_EMAIL ?? '';
+export const SMTP_FROM_NAME: string = (globalThis as any).__ENV__?.SMTP_FROM_NAME ?? '';
+
