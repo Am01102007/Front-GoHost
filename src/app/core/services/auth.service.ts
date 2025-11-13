@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, effect } from '@angular/core';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { map, tap, catchError, finalize } from 'rxjs/operators';
@@ -421,22 +421,13 @@ export class AuthService {
         this.dataSyncService.notifyDataChange('users', 'create', user, user.id, 'register');
         console.log(`✅ AuthService: Usuario registrado exitosamente: ${user.email}`);
 
-        // Correo de bienvenida (EmailJS)
+        // Correo de bienvenida vía backend SSR
         try {
-          this.emailService.init();
           if (user?.email) {
-            if (this.emailService.isWelcomeConfigured()) {
-              this.emailService
-                .sendWelcome({ to_email: user.email, to_name: user.nombre })
-                .then(() => {
-                  try { this.notifications.success('Correo de bienvenida enviado'); } catch {}
-                })
-                .catch(() => {
-                  try { this.notifications.error('No se pudo enviar el correo de bienvenida'); } catch {}
-                });
-            } else {
-              try { this.notifications.info('Correo de bienvenida no configurado'); } catch {}
-            }
+            this.emailService
+              .sendWelcome({ to_email: user.email, to_name: user.nombre })
+              .then(() => { try { this.notifications.success('Correo de bienvenida enviado'); } catch {} })
+              .catch(() => { try { this.notifications.error('No se pudo enviar el correo de bienvenida'); } catch {} });
           }
         } catch {}
       }),
@@ -696,9 +687,8 @@ export class AuthService {
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
         console.log('✅ Perfil de usuario actualizado');
 
-        // Correo de perfil actualizado (EmailJS)
+        // Correo de perfil actualizado vía backend SSR
         try {
-          this.emailService.init();
           const mail = merged?.email;
           if (mail) this.emailService.sendProfileUpdated({ to_email: mail, to_name: merged?.nombre });
         } catch {}

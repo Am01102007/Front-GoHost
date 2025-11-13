@@ -181,30 +181,11 @@ app.get('/env.js', (req, res) => {
   // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
   // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
   const apiBaseUrl = '/api';
-  // Proveedor de correo: 'ssrsmtp' (enviar desde SSR) | 'emailjs'
+  // Proveedor de correo: 'ssrsmtp' (enviar desde SSR con Nodemailer)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'ssrsmtp';
-  // Claves de EmailJS tomadas del entorno del servidor (Railway/Local)
-  const emailPublic = process.env['EMAILJS_PUBLIC_KEY'] || '';
-  const emailService = process.env['EMAILJS_SERVICE_ID'] || '';
-  const emailTemplateBookingCreated = process.env['EMAILJS_TEMPLATE_ID_BOOKING_CREATED'] || '';
-  const emailTemplateBookingPaid = process.env['EMAILJS_TEMPLATE_ID_BOOKING_PAID'] || '';
-  const emailTemplateBookingCancelled = process.env['EMAILJS_TEMPLATE_ID_BOOKING_CANCELLED'] || '';
-  const emailTemplatePasswordResetRequested = process.env['EMAILJS_TEMPLATE_ID_PASSWORD_RESET_REQUESTED'] || '';
-  const emailTemplatePasswordChanged = process.env['EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED'] || '';
-  const emailTemplateWelcome = process.env['EMAILJS_TEMPLATE_ID_WELCOME'] || '';
-  const emailTemplateProfileUpdated = process.env['EMAILJS_TEMPLATE_ID_PROFILE_UPDATED'] || '';
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
-    EMAILJS_PUBLIC_KEY: emailPublic,
-    EMAILJS_SERVICE_ID: emailService,
-    EMAILJS_TEMPLATE_ID_BOOKING_CREATED: emailTemplateBookingCreated,
-    EMAILJS_TEMPLATE_ID_BOOKING_PAID: emailTemplateBookingPaid,
-    EMAILJS_TEMPLATE_ID_BOOKING_CANCELLED: emailTemplateBookingCancelled,
-    EMAILJS_TEMPLATE_ID_PASSWORD_RESET_REQUESTED: emailTemplatePasswordResetRequested,
-    EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED: emailTemplatePasswordChanged,
-    EMAILJS_TEMPLATE_ID_WELCOME: emailTemplateWelcome,
-    EMAILJS_TEMPLATE_ID_PROFILE_UPDATED: emailTemplateProfileUpdated,
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
