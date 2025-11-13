@@ -55,7 +55,7 @@
     </label>
     <ul class="lista-archivos" *ngIf="documentos.length > 0">
       <li *ngFor="let doc of documentos; let i = index" class="documento-item">
-        <span>{{ doc }}</span>
+        <span>{{ doc.name }}</span>
         <button type="button" class="btn-remove" (click)="removeDocument(i)" title="Eliminar documento">
           ✕
         </button>
@@ -67,7 +67,10 @@
   <section class="bloque foto">
     <h3>Foto de perfil</h3>
     <div class="avatar">
-      <img [src]="auth.currentUser()?.avatarUrl || '/icons/user.svg'" alt="avatar"/>
+      <img
+  [src]="fotoPerfilPreview || auth.currentUser()?.avatarUrl || '/icons/user.svg'"
+  alt="avatar"
+/>
     </div>
     <label class="btn">
       <input type="file" accept="image/*" (change)="onSubirFoto($event)"/>

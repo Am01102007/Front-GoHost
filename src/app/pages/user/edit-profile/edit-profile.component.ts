@@ -31,7 +31,9 @@ export class EditProfileComponent implements OnInit {
   fotoPerfilNombre = '';
   fotoPerfilFile: File | null = null;
   saving = false;
-
+  fotoPerfilUrl: string | null = null;   
+  fotoPerfilPreview: string | null = null;
+  
   // Mantener el formulario sincronizado si el usuario cambia
   userFormSync = effect(() => {
     const u = this.auth.currentUser();
@@ -47,25 +49,38 @@ export class EditProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Cargar datos reales del perfil desde el backend
-    this.auth.loadProfile().subscribe({
-      next: (u) => {
-        try {
-          this.form.patchValue({
-            nombre: u.nombre || '',
-            apellido: u.apellido || '',
-            email: u.email || '',
-            telefono: (u as any).telefono || '',
-            telefonoCodigo: (u as any).telefonoCodigo || '',
-            descripcion: (u as any).descripcion || ''
-          });
-        } catch {}
-      },
-      error: (err) => {
-        this.notify.httpError(err);
-      }
-    });
-  }
+  this.auth.loadProfile().subscribe({
+    next: (u) => {
+      try {
+        this.form.patchValue({
+          nombre: u.nombre || '',
+          apellido: u.apellido || '',
+          email: u.email || '',
+          telefono: (u as any).telefono || '',
+          telefonoCodigo: (u as any).telefonoCodigo || '',
+          // si el backend no trae descripcion, dejamos string vacío
+          descripcion: (u as any).descripcion || ''
+        });
+
+        // 🔥 aquí tomas la URL que te devuelve el backend / Cloudinary
+        // cambia 'fotoPerfilUrl' por el nombre real (ej: 'avatarUrl', 'profileImage', etc.)
+        this.fotoPerfilUrl =
+          (u as any).fotoPerfilUrl ||
+          (u as any).avatarUrl ||
+          (u as any).profileImage ||
+          null;
+
+        // para mostrar en el <img> al inicio
+        this.fotoPerfilPreview = this.fotoPerfilUrl;
+      } catch {}
+    },
+    error: (err) => {
+      this.notify.httpError(err);
+    }
+  });
+}
+
+
 
   save() {
   if (this.form.invalid) {
@@ -74,40 +89,53 @@ export class EditProfileComponent implements OnInit {
   }
 
   this.saving = true;
-  const formData = this.form.getRawValue();
+  const formValue = this.form.getRawValue();
 
-  this.auth.updateProfile(formData, this.fotoPerfilFile || undefined /*, this.documentos */)
+  // Opcional: tercer parámetro con documentos si tu servicio lo soporta
+  this.auth.updateProfile(formValue, this.fotoPerfilFile || undefined /*, this.documentos */)
     .subscribe({
-      next: (updatedUser) => {
+      next: (u) => {
         this.saving = false;
         this.notify.success('Perfil actualizado', 'Los cambios se han guardado correctamente.');
 
-        // Limpiar campos sensibles
+        // limpiar campos de contraseña
         this.form.patchValue({
           passwordActual: '',
           passwordNueva: ''
         });
 
-        // Sincronizar el formulario con el usuario actualizado (o el actual del auth)
-        const user = updatedUser || this.auth.currentUser();
-        if (user) {
+        // 🔥 Si el backend devuelve el usuario actualizado, resincronizamos sin perder descripcion
+        if (u) {
+          const current = this.form.getRawValue(); // lo que el usuario ve ahora
+
           this.form.patchValue({
-            nombre: user.nombre || '',
-            apellido: user.apellido || '',
-            email: user.email || '',
-            telefono: (user as any).telefono || '',
-            telefonoCodigo: (user as any).telefonoCodigo || '',
-            descripcion: (user as any).descripcion || '',
-            passwordActual: '',
-            passwordNueva: ''
+            nombre: u.nombre ?? current.nombre,
+            apellido: u.apellido ?? current.apellido,
+            email: u.email ?? current.email,
+            telefono: (u as any).telefono ?? current.telefono,
+            telefonoCodigo: (u as any).telefonoCodigo ?? current.telefonoCodigo,
+            // si el backend no envía descripcion, mantenemos la actual
+            descripcion: (u as any).descripcion ?? current.descripcion
           });
+
+          // actualizar URL de foto si viene una nueva de Cloudinary
+          const nuevaUrl =
+            (u as any).fotoPerfilUrl ||
+            (u as any).avatarUrl ||
+            (u as any).profileImage ||
+            null;
+
+          if (nuevaUrl) {
+            this.fotoPerfilUrl = nuevaUrl;
+            this.fotoPerfilPreview = nuevaUrl;
+          }
         }
 
-        // Marcar el formulario como limpio → el guard deja de avisar
+        // marcar el formulario como "limpio" → el guard ya no molesta
         this.form.markAsPristine();
         this.form.markAsUntouched();
 
-        // Limpiar estado visual de la foto pendiente
+        // limpiar estado de foto pendiente
         this.fotoPerfilNombre = '';
         this.fotoPerfilFile = null;
       },
@@ -117,6 +145,7 @@ export class EditProfileComponent implements OnInit {
       }
     });
 }
+
 
 
   cambiarContrasena() {
@@ -164,7 +193,6 @@ export class EditProfileComponent implements OnInit {
     return;
   }
 
-  // Guardar los objetos File completos
   this.documentos = [...this.documentos, ...files];
   input.value = '';
 
@@ -172,7 +200,8 @@ export class EditProfileComponent implements OnInit {
 }
 
 
-  onSubirFoto(ev: Event) {
+
+  oonSubirFoto(ev: Event) {
   const input = ev.target as HTMLInputElement;
   const file = (input.files || [])[0];
 
@@ -196,29 +225,37 @@ export class EditProfileComponent implements OnInit {
   this.fotoPerfilFile = file;
   input.value = '';
 
-  // Subir y guardar inmediatamente la foto junto con los datos actuales
+  // 🔥 preview local inmediatamente
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.fotoPerfilPreview = reader.result as string;
+  };
+  reader.readAsDataURL(file);
+
+  // Subir a backend (que a su vez sube a Cloudinary)
   this.saving = true;
   const currentValues = this.form.getRawValue();
 
   this.auth.updateProfile(currentValues, file /*, this.documentos */)
     .subscribe({
-      next: (updatedUser) => {
+      next: (u) => {
         this.saving = false;
         this.notify.success('Foto de perfil actualizada', 'La foto se ha guardado en tu perfil.');
 
-        const user = updatedUser || this.auth.currentUser();
-        if (user) {
-          this.form.patchValue({
-            nombre: user.nombre || '',
-            apellido: user.apellido || '',
-            email: user.email || '',
-            telefono: (user as any).telefono || '',
-            telefonoCodigo: (user as any).telefonoCodigo || '',
-            descripcion: (user as any).descripcion || ''
-          });
+        if (u) {
+          const nuevaUrl =
+            (u as any).fotoPerfilUrl ||
+            (u as any).avatarUrl ||
+            (u as any).profileImage ||
+            null;
+
+          if (nuevaUrl) {
+            // sobreescribimos el preview con la URL oficial de Cloudinary
+            this.fotoPerfilUrl = nuevaUrl;
+            this.fotoPerfilPreview = nuevaUrl;
+          }
         }
 
-        // Ya no hay archivo pendiente visualmente
         this.fotoPerfilNombre = '';
         this.fotoPerfilFile = null;
       },
@@ -227,7 +264,8 @@ export class EditProfileComponent implements OnInit {
         this.notify.httpError(err);
       }
     });
-  }
+}
+
 
 
   removeDocument(index: number) {
