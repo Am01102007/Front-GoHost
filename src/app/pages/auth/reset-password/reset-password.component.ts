@@ -21,6 +21,9 @@ export class ResetPasswordComponent {
   
   step = signal<'request' | 'confirm' | 'success'>('request');
   loading = false;
+  constructor() {
+    try { this.email.init(); } catch {}
+  }
 
   form = this.fb.group({ 
     email: ['', [Validators.required, Validators.email]] 
@@ -85,6 +88,3 @@ export class ResetPasswordComponent {
     this.confirmForm.reset();
   }
 }
-  constructor() {
-    try { this.email.init(); } catch {}
-  }
