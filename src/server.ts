@@ -5,7 +5,7 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import { render as renderTemplate } from './server/mail/templates';
 import { IncomingMessage } from 'node:http';
 import { join } from 'node:path';
