@@ -48,7 +48,17 @@ export class BackendDiagnosticsService {
     // Usamos API_BASE (inyectado vía /env.js) para hacer llamadas directas al backend
     const health$ = this.probe('Health', `${API_BASE}/alojamientos?page=0&size=1`);
     const listings$ = this.probe('Alojamientos', `${API_BASE}/alojamientos`);
-    const bookingsMine$ = this.probe('Reservas propias', `${API_BASE}/reservas/mias`);
+    // Evitar llamar al endpoint protegido si no hay sesión/token para no generar 401 innecesarios en invitados
+    let bookingsMine$;
+    try {
+      const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('auth_token');
+      bookingsMine$ = hasToken
+        ? this.probe('Reservas propias', `${API_BASE}/reservas/mias`)
+        : of({ name: 'Reservas propias', ok: true, status: 401, durationMs: 0, detail: 'Auth requerida (no iniciada)' });
+    } catch {
+      // En SSR donde no hay localStorage, probamos normalmente (no estamos en navegador)
+      bookingsMine$ = this.probe('Reservas propias', `${API_BASE}/reservas/mias`);
+    }
 
     return forkJoin([health$, listings$, bookingsMine$]).pipe(
       map(results => {
