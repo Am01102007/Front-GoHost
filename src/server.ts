@@ -176,9 +176,8 @@ app.use(
  */
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
-  // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
-  const apiBaseUrl = '/api';
+  // API base: apuntar directo al backend público o variable de entorno
+  const apiBaseUrl = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
   const payloadObj = {
