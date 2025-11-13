@@ -1,7 +1,15 @@
 <article class="card" [class.host-view]="hostView">
   <div class="image-container">
     <a [routerLink]="['/alojamientos', listing.id]">
-      <img [src]="listing.imagenes?.[0] || '/icons/lodging.svg'" [alt]="listing.titulo || 'Alojamiento'" (error)="onImageError($event)" />
+      <img 
+        [src]="mainImage" 
+        [attr.srcset]="mainSrcSet" 
+        [attr.sizes]="mainSizes"
+        loading="lazy" 
+        decoding="async" 
+        [alt]="listing.titulo || 'Alojamiento'" 
+        (error)="onImageError($event)" 
+      />
     </a>
     
     <!-- Botón de favoritos para vista de huésped -->

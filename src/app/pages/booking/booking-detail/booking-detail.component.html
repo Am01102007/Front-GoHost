@@ -7,7 +7,14 @@
   <div class="content">
     <div class="summary">
       <div class="thumb">
-        <img [src]="listing()?.imagenes?.[0] || '/images/placeholder.jpg'" alt="Alojamiento" />
+        <img 
+          [src]="coverImage" 
+          [attr.srcset]="coverSrcSet" 
+          [attr.sizes]="coverSizes" 
+          loading="lazy" 
+          decoding="async" 
+          alt="Alojamiento" 
+        />
       </div>
       <div class="info">
         <h2>{{ listing()?.titulo || 'Alojamiento' }}</h2>
@@ -37,4 +44,3 @@
     <button class="btn-secondary" (click)="volver()">Volver</button>
   </div>
 </ng-template>
-

@@ -169,6 +169,12 @@ export class BookingsService {
   }
 
   private toBooking(dto: any): Booking {
+    const guestEmail = (
+      dto?.huesped?.email ?? dto?.usuarioEmail ?? dto?.usuario?.email ?? dto?.userEmail ?? dto?.emailHuesped ?? dto?.email
+    );
+    const guestName = (
+      [dto?.huesped?.nombre, dto?.huesped?.apellido].filter(Boolean).join(' ') || dto?.usuarioNombre || dto?.usuario?.nombre || dto?.userName || dto?.nombreHuesped
+    );
     return {
       id: String(dto.id),
       listingId: String(dto.alojamientoId ?? dto.listingId ?? dto.alojamiento?.id ?? ''),
@@ -179,7 +185,9 @@ export class BookingsService {
       fechaFin: String(dto.checkOut ?? dto.fechaFin ?? dto.fin ?? ''),
       huespedes: (dto.numeroHuespedes ?? dto.huespedes ?? 1),
       total: Number(dto.total ?? dto.precioTotal ?? 0),
-      estado: this.mapEstado(dto.estado)
+      estado: this.mapEstado(dto.estado),
+      guestEmail: typeof guestEmail === 'string' && guestEmail ? String(guestEmail) : undefined,
+      guestName: typeof guestName === 'string' && guestName ? String(guestName) : undefined,
     };
   }
 

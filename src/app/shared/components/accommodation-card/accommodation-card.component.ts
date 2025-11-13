@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Listing } from '../../../core/models/listing.model';
 import { ListingsService } from '../../../core/services/listings.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
+import { isCloudinaryUrl, withTransforms, buildSrcSet, defaultSizes } from '../../cloudinary.util';
 
 /**
  * Componente de tarjeta de alojamiento reutilizable.
@@ -118,5 +119,20 @@ export class AccommodationCardComponent {
     const img = event.target as HTMLImageElement;
     if (!img) return;
     img.src = '/icons/lodging.svg';
+  }
+
+  get mainImage(): string {
+    const url = this.listing?.imagenes?.[0];
+    if (!url) return '/icons/lodging.svg';
+    return isCloudinaryUrl(url) ? withTransforms(url, 'c_fill,f_auto,q_auto,w_640,h_360,dpr_auto') : url;
+  }
+
+  get mainSrcSet(): string {
+    const url = this.listing?.imagenes?.[0];
+    return url && isCloudinaryUrl(url) ? buildSrcSet(url, [320, 480, 640, 768, 1024]) : '';
+  }
+
+  get mainSizes(): string {
+    return defaultSizes();
   }
 }

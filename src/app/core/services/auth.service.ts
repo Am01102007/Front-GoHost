@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { map, tap, catchError, finalize } from 'rxjs/operators';
 import { User } from '../models/user.model';
+import { EmailService } from './email.service';
 import { DataSyncService } from './data-sync.service';
 import { API_BASE } from '../config';
 
@@ -124,7 +125,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private dataSyncService: DataSyncService
+    private dataSyncService: DataSyncService,
+    private emailService: EmailService
   ) {
     // Cargar usuario desde localStorage al inicializar
     this.loadUserFromStorage();
@@ -416,6 +418,14 @@ export class AuthService {
         // Notificar creación de usuario (registro)
         this.dataSyncService.notifyDataChange('users', 'create', user, user.id, 'register');
         console.log(`✅ AuthService: Usuario registrado exitosamente: ${user.email}`);
+
+        // Correo de bienvenida (EmailJS)
+        try {
+          this.emailService.init();
+          if (user?.email) {
+            this.emailService.sendWelcome({ to_email: user.email, to_name: user.nombre });
+          }
+        } catch {}
       }),
       catchError(err => {
         console.error('❌ AuthService.register error:', err);
@@ -672,6 +682,13 @@ export class AuthService {
         this.currentUser.set(merged);
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
         console.log('✅ Perfil de usuario actualizado');
+
+        // Correo de perfil actualizado (EmailJS)
+        try {
+          this.emailService.init();
+          const mail = merged?.email;
+          if (mail) this.emailService.sendProfileUpdated({ to_email: mail, to_name: merged?.nombre });
+        } catch {}
       }),
       tap(() => {
         this.loadProfile().subscribe({

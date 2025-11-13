@@ -5,7 +5,9 @@ import { BookingsService } from '../../../core/services/bookings.service';
 import { ListingsService } from '../../../core/services/listings.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { EmailService } from '../../../core/services/email.service';
 import { Booking } from '../../../core/models/booking.model';
+import { isCloudinaryUrl, withTransforms, buildSrcSet, thumbSizes } from '../../../shared/cloudinary.util';
 
 @Component({
   selector: 'app-host-bookings',
@@ -19,6 +21,7 @@ export class HostBookingsComponent implements OnInit {
   private readonly listings = inject(ListingsService);
   private readonly notifications = inject(NotificationsService);
   private readonly auth = inject(AuthService);
+  private readonly email = inject(EmailService);
   private readonly hostBookings = signal<Booking[]>([]);
 
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
@@ -71,13 +74,75 @@ export class HostBookingsComponent implements OnInit {
 
   aceptar(id: string) {
     this.bookings.updateStatus(id, 'pagado').subscribe({
-      next: () => this.notifications.success('Reserva confirmada', 'La reserva fue confirmada correctamente')
+      next: () => {
+        this.notifications.success('Reserva confirmada', 'La reserva fue confirmada correctamente');
+        try {
+          const b = this.all().find((x: any) => x.id === id) || this.bookings.bookings().find(x => x.id === id);
+          const guestEmail = (b as any)?.guestEmail as string | undefined;
+          const guestName = (b as any)?.guestName as string | undefined;
+          if (b && guestEmail) {
+            this.email.init();
+            this.email.sendBookingPaid({
+              to_email: guestEmail,
+              to_name: guestName,
+              alojamientoId: b.listingId,
+              fechaInicio: b.fechaInicio,
+              fechaFin: b.fechaFin,
+              huespedes: b.huespedes,
+              recipient_role: 'HUESPED',
+            });
+          }
+          const host = this.auth.userProfile();
+          if (b && host?.email) {
+            this.email.sendBookingPaid({
+              to_email: host.email,
+              to_name: host.nombre,
+              alojamientoId: b.listingId,
+              fechaInicio: b.fechaInicio,
+              fechaFin: b.fechaFin,
+              huespedes: b.huespedes,
+              recipient_role: 'ANFITRION',
+            });
+          }
+        } catch {}
+      }
     });
   }
 
   rechazar(id: string) {
     this.bookings.updateStatus(id, 'cancelado').subscribe({
-      next: () => this.notifications.success('Reserva cancelada', 'La reserva fue cancelada correctamente')
+      next: () => {
+        this.notifications.success('Reserva cancelada', 'La reserva fue cancelada correctamente');
+        try {
+          const b = this.all().find((x: any) => x.id === id) || this.bookings.bookings().find(x => x.id === id);
+          const guestEmail = (b as any)?.guestEmail as string | undefined;
+          const guestName = (b as any)?.guestName as string | undefined;
+          if (b && guestEmail) {
+            this.email.init();
+            this.email.sendBookingCancelled({
+              to_email: guestEmail,
+              to_name: guestName,
+              alojamientoId: b.listingId,
+              fechaInicio: b.fechaInicio,
+              fechaFin: b.fechaFin,
+              motivo: 'Rechazada por anfitrión',
+              recipient_role: 'HUESPED',
+            });
+          }
+          const host = this.auth.userProfile();
+          if (b && host?.email) {
+            this.email.sendBookingCancelled({
+              to_email: host.email,
+              to_name: host.nombre,
+              alojamientoId: b.listingId,
+              fechaInicio: b.fechaInicio,
+              fechaFin: b.fechaFin,
+              motivo: 'Rechazada por anfitrión',
+              recipient_role: 'ANFITRION',
+            });
+          }
+        } catch {}
+      }
     });
   }
 
@@ -156,5 +221,19 @@ export class HostBookingsComponent implements OnInit {
         console.error(`📡 Status: ${err.status}, Message: ${err.message}`);
       }
     });
+  }
+
+  thumb(url?: string): string {
+    const u = url || '';
+    if (!u) return '/images/placeholder.jpg';
+    return isCloudinaryUrl(u) ? withTransforms(u, 'c_fill,f_auto,q_auto,w_300,h_200,dpr_auto') : u;
+  }
+
+  thumbSrcSet(url?: string): string {
+    return url && isCloudinaryUrl(url) ? buildSrcSet(url, [200, 300, 400, 600]) : '';
+  }
+
+  thumbSize(): string {
+    return thumbSizes();
   }
 }

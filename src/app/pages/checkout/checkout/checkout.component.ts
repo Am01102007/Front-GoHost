@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
+import { EmailService } from '../../../core/services/email.service';
 
 @Component({
   selector: 'app-checkout',
@@ -21,6 +22,7 @@ export class CheckoutComponent {
   notifications = inject(NotificationsService);
   route = inject(ActivatedRoute);
   router = inject(Router);
+  email = inject(EmailService);
 
   form = this.fb.group({
     listingId: ['', Validators.required],
@@ -44,6 +46,20 @@ export class CheckoutComponent {
       checkOut: v.fechaFin!,
       numeroHuespedes: v.huespedes!
     }).subscribe(res => {
+      // Enviar correo de "reserva creada" (EmailJS) en cliente
+      try {
+        const user = this.auth.userProfile();
+        this.email.sendBookingCreated({
+          to_email: user?.email,
+          to_name: user?.nombre,
+          alojamientoId: v.listingId!,
+          fechaInicio: v.fechaInicio!,
+          fechaFin: v.fechaFin!,
+          huespedes: v.huespedes!,
+          huesped_email: user?.email,
+          huesped_nombre: user?.nombre
+        });
+      } catch {}
       if (estado === 'pagado') {
         this.bookings.updateStatus(res.id, 'pagado').subscribe(() => {
           this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente');
@@ -59,6 +75,8 @@ export class CheckoutComponent {
   }
 
   constructor() {
+    // Inicializar EmailJS sólo en navegador
+    try { this.email.init(); } catch {}
     // Prefija automáticamente el ID desde query params o estado de navegación
     try {
       const qp = this.route.snapshot.queryParamMap.get('listingId');

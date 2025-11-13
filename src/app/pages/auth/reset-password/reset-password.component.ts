@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { EmailService } from '../../../core/services/email.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
@@ -16,6 +17,7 @@ export class ResetPasswordComponent {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   notify = inject(NotificationsService);
+  email = inject(EmailService);
   
   step = signal<'request' | 'confirm' | 'success'>('request');
   loading = false;
@@ -44,6 +46,8 @@ export class ResetPasswordComponent {
         this.loading = false;
         this.step.set('confirm');
         this.notify.success('Código enviado', 'Revisa tu correo electrónico.');
+        // Notificación EmailJS: solicitud de restablecimiento
+        try { this.email.sendPasswordResetRequested({ to_email: email }); } catch {}
       },
       error: (err) => {
         this.loading = false;
@@ -63,6 +67,11 @@ export class ResetPasswordComponent {
         this.loading = false;
         this.step.set('success');
         this.notify.success('Contraseña restablecida', 'Ya puedes iniciar sesión con tu nueva contraseña.');
+        // Notificación EmailJS: contraseña cambiada
+        try {
+          const mail = this.form.value.email || this.auth.currentUser()?.email;
+          if (mail) this.email.sendPasswordChanged({ to_email: mail });
+        } catch {}
       },
       error: (err) => {
         this.loading = false;
@@ -76,3 +85,6 @@ export class ResetPasswordComponent {
     this.confirmForm.reset();
   }
 }
+  constructor() {
+    try { this.email.init(); } catch {}
+  }

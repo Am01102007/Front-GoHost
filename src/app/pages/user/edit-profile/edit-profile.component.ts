@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
+import { EmailService } from '../../../core/services/email.service';
 
 @Component({
   selector: 'app-edit-profile',
@@ -15,6 +16,7 @@ export class EditProfileComponent implements OnInit {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   notify = inject(NotificationsService);
+  email = inject(EmailService);
 
   form = this.fb.nonNullable.group({
     nombre: this.auth.currentUser()?.nombre || '',
@@ -47,6 +49,7 @@ export class EditProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    try { this.email.init(); } catch {}
     // Cargar datos reales del perfil desde el backend
     this.auth.loadProfile().subscribe({
       next: (u) => {
@@ -104,6 +107,10 @@ export class EditProfileComponent implements OnInit {
         this.saving = false;
         this.notify.success('Contraseña actualizada', 'Tu contraseña ha sido cambiada exitosamente.');
         this.form.patchValue({ passwordActual: '', passwordNueva: '' });
+        try {
+          const mail = this.auth.currentUser()?.email;
+          if (mail) this.email.sendPasswordChanged({ to_email: mail });
+        } catch {}
       },
       error: (err) => {
         this.saving = false;
