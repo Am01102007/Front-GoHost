@@ -12,7 +12,7 @@
 </head>
 <body>
   <app-root></app-root>
-  <!-- Carga configuración runtime desde /env.js para apuntar a backend en Railway -->
+  <!-- Carga mínima /env.js (API_BASE_URL y MAIL_PROVIDER); SSR gestiona correo -->
   <script src="/env.js"></script>
   <!-- Eliminado SMTP.js: el envío ahora es seguro vía SSR/Nodemailer -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>

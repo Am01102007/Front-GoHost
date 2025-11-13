@@ -22,7 +22,7 @@ export class ResetPasswordComponent {
   step = signal<'request' | 'confirm' | 'success'>('request');
   loading = false;
   constructor() {
-    try { this.email.init(); } catch {}
+    // Envío de correo gestionado por SSR; no requiere init en cliente
   }
 
   form = this.fb.group({ 
@@ -49,7 +49,7 @@ export class ResetPasswordComponent {
         this.loading = false;
         this.step.set('confirm');
         this.notify.success('Código enviado', 'Revisa tu correo electrónico.');
-        // Notificación EmailJS: solicitud de restablecimiento
+        // Notificación de restablecimiento vía backend SSR
         try { this.email.sendPasswordResetRequested({ to_email: email }); } catch {}
       },
       error: (err) => {
@@ -70,7 +70,7 @@ export class ResetPasswordComponent {
         this.loading = false;
         this.step.set('success');
         this.notify.success('Contraseña restablecida', 'Ya puedes iniciar sesión con tu nueva contraseña.');
-        // Notificación EmailJS: contraseña cambiada
+        // Notificación de contraseña cambiada vía backend SSR
         try {
           const mail = this.form.value.email || this.auth.currentUser()?.email;
           if (mail) this.email.sendPasswordChanged({ to_email: mail });

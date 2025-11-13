@@ -46,7 +46,7 @@ export class CheckoutComponent {
       checkOut: v.fechaFin!,
       numeroHuespedes: v.huespedes!
     }).subscribe(res => {
-      // Enviar correo de "reserva creada" (EmailJS) en cliente
+      // Enviar correo de "reserva creada" vía backend SSR
       try {
         const user = this.auth.userProfile();
         this.email.sendBookingCreated({
@@ -75,8 +75,7 @@ export class CheckoutComponent {
   }
 
   constructor() {
-    // Inicializar EmailJS sólo en navegador
-    try { this.email.init(); } catch {}
+    // Envío de correo gestionado por SSR; no requiere init en cliente
     // Prefija automáticamente el ID desde query params o estado de navegación
     try {
       const qp = this.route.snapshot.queryParamMap.get('listingId');

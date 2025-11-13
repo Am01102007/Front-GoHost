@@ -1,23 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import emailjs from '@emailjs/browser';
-import {
-  EMAILJS_PUBLIC_KEY,
-  EMAILJS_SERVICE_ID,
-  EMAILJS_TEMPLATE_ID_BOOKING_CREATED,
-  EMAILJS_TEMPLATE_ID_BOOKING_PAID,
-  EMAILJS_TEMPLATE_ID_BOOKING_CANCELLED,
-  EMAILJS_TEMPLATE_ID_PASSWORD_RESET_REQUESTED,
-  EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED,
-  EMAILJS_TEMPLATE_ID_WELCOME,
-  EMAILJS_TEMPLATE_ID_PROFILE_UPDATED,
-  MAIL_PROVIDER,
-} from '../../shared/email.config';
+import { MAIL_PROVIDER } from '../../shared/email.config';
 
 @Injectable({ providedIn: 'root' })
 export class EmailService {
-  private initialized = false;
-  private canSend = false;
   constructor(private http: HttpClient) {}
   
   private isSsrSmtpEnabled(): boolean {
@@ -32,28 +18,11 @@ export class EmailService {
     }
   }
 
-  init(): void {
-    // Solo inicializar en navegador
-    if (typeof window === 'undefined') return;
-    if (this.initialized) return;
-    if (EMAILJS_PUBLIC_KEY) {
-      try {
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-        this.canSend = true;
-      } catch (e) {
-        console.warn('EmailJS: init falló', e);
-        this.canSend = false;
-      }
-    } else {
-      console.warn('EmailJS: PUBLIC_KEY no configurada');
-    }
-    this.initialized = true;
-  }
+  // Ya no se requiere inicialización en cliente; el envío es vía SSR.
+  init(): void { /* no-op */ }
 
   /** Indica si la plantilla de bienvenida está correctamente configurada */
-  isWelcomeConfigured(): boolean {
-    return !!(EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID_WELCOME);
-  }
+  isWelcomeConfigured(): boolean { return true; }
 
   /** Envía correo de "reserva creada" (pendiente) */
   async sendBookingCreated(params: {
@@ -68,14 +37,7 @@ export class EmailService {
   }): Promise<void> {
     if (typeof window === 'undefined') return; // SSR: solo cliente
     const to = params.to_email || params.huesped_email;
-    if (this.isSsrSmtpEnabled() && to) { await this.sendViaBackend('booking_created', to, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_BOOKING_CREATED) {
-      console.warn('EmailJS: claves/IDs faltantes, no se envía');
-      return;
-    }
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_BOOKING_CREATED, params); } catch (err) {
-      console.error('EmailJS: error enviando correo de reserva creada', err);
-    }
+    if (to) await this.sendViaBackend('booking_created', to, params);
   }
 
   /** Envía correo de "reserva pagada/confirmada" */
@@ -90,9 +52,7 @@ export class EmailService {
   }): Promise<void> {
     if (typeof window === 'undefined') return;
     const to = params.to_email;
-    if (this.isSsrSmtpEnabled() && to) { await this.sendViaBackend('booking_paid', to, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_BOOKING_PAID) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_BOOKING_PAID, params); } catch {}
+    if (to) await this.sendViaBackend('booking_paid', to, params);
   }
 
   /** Envía correo de "reserva cancelada" */
@@ -107,9 +67,7 @@ export class EmailService {
   }): Promise<void> {
     if (typeof window === 'undefined') return;
     const to = params.to_email;
-    if (this.isSsrSmtpEnabled() && to) { await this.sendViaBackend('booking_cancelled', to, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_BOOKING_CANCELLED) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_BOOKING_CANCELLED, params); } catch {}
+    if (to) await this.sendViaBackend('booking_cancelled', to, params);
   }
 
   // Mantener un único copy reutilizable: para anfitrión usamos las mismas plantillas
@@ -118,41 +76,24 @@ export class EmailService {
   /** Envía correo de "solicitud de restablecimiento de contraseña" */
   async sendPasswordResetRequested(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    if (this.isSsrSmtpEnabled()) { await this.sendViaBackend('password_reset_requested', params.to_email, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_PASSWORD_RESET_REQUESTED) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_PASSWORD_RESET_REQUESTED, params); } catch {}
+    await this.sendViaBackend('password_reset_requested', params.to_email, params);
   }
 
   /** Envía correo de "contraseña cambiada" */
   async sendPasswordChanged(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    if (this.isSsrSmtpEnabled()) { await this.sendViaBackend('password_changed', params.to_email, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED, params); } catch {}
+    await this.sendViaBackend('password_changed', params.to_email, params);
   }
 
   /** Envía correo de bienvenida tras registro */
   async sendWelcome(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    if (this.isSsrSmtpEnabled()) { await this.sendViaBackend('welcome', params.to_email, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_WELCOME) {
-      console.warn('EmailJS: claves/IDs faltantes, no se envía welcome', {
-        canSend: this.canSend,
-        serviceId: EMAILJS_SERVICE_ID,
-        templateId: EMAILJS_TEMPLATE_ID_WELCOME,
-      });
-      return;
-    }
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_WELCOME, params); } catch (err) {
-      console.error('EmailJS: error enviando correo de bienvenida', err);
-    }
+    await this.sendViaBackend('welcome', params.to_email, params);
   }
 
   /** Envía correo de "perfil actualizado" */
   async sendProfileUpdated(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
-    if (this.isSsrSmtpEnabled()) { await this.sendViaBackend('profile_updated', params.to_email, params); return; }
-    if (!this.canSend || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID_PROFILE_UPDATED) return;
-    try { await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_PROFILE_UPDATED, params); } catch {}
+    await this.sendViaBackend('profile_updated', params.to_email, params);
   }
 }
