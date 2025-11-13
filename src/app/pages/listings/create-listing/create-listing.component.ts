@@ -127,23 +127,7 @@ export class CreateListingComponent {
     );
   }
 
-  private uploadImages(files: File[]) {
-    // Genera data URLs para previsualización y optimismo de UI
-    const uploads = files.map((file, index) => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          resolve(dataUrl);
-        };
-        reader.onerror = () => {
-          resolve(`https://picsum.photos/seed/image-${index}-${Date.now()}/800/500`);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-    return forkJoin(uploads);
-  }
+  // Eliminado: uploadImages. El backend recibe las imágenes directamente vía multipart/form-data.
 
   crear() {
     if (this.form.invalid) {
@@ -161,9 +145,7 @@ export class CreateListingComponent {
 
     const v = this.form.value;
     
-    const doCreate = (photoUrls: string[]) => {
-      const finalUrls = photoUrls.length > 0 ? photoUrls : this.photoPreviews;
-
+    const doCreate = () => {
       this.listingsSvc.create({
         titulo: v.titulo!,
         descripcion: v.descripcion!,
@@ -172,13 +154,13 @@ export class CreateListingComponent {
         calle: v.direccion!,
         precioNoche: v.precioPorNoche!,
         capacidad: v.capacidad!,
-        fotos: finalUrls,
+        fotos: this.selectedFiles,
         servicios: (v.servicios || [])
-      }, this.selectedFiles).subscribe({
+      }).subscribe({
         next: () => {
           this.notifications.success(
             'Alojamiento creado', 
-            `Tu alojamiento "${v.titulo}" fue creado correctamente con ${finalUrls.length} imagen(es).`
+            `Tu alojamiento "${v.titulo}" fue creado correctamente con ${this.selectedFiles.length} imagen(es).`
           );
           this.router.navigate(['/mis-alojamientos']);
         },
@@ -188,22 +170,8 @@ export class CreateListingComponent {
         }
       });
     };
-    if (this.selectedFiles.length > 0) {
-      this.uploading = true;
-      this.uploadImages(this.selectedFiles).subscribe({
-        next: (urls) => {
-          this.uploading = false;
-          doCreate(urls);
-        },
-        error: (err) => {
-          this.uploading = false;
-          console.error('Error uploading images:', err);
-          doCreate(this.photoPreviews);
-        }
-      });
-    } else {
-      doCreate([]);
-    }
+    this.uploading = true;
+    doCreate();
   }
 
   // --- Gestión de servicios ---

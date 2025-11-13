@@ -434,6 +434,10 @@ export class ListingsService {
    * });
    * ```
    */
+  /**
+   * Crea un nuevo alojamiento con imágenes.
+   * ✅ CORRECCIÓN: Envía FormData con multipart/form-data
+   */
   create(dto: {
     titulo: string;
     descripcion?: string;
@@ -443,19 +447,16 @@ export class ListingsService {
     zip?: string;
     precioNoche: number;
     capacidad: number;
-    // Soporta tanto arrays de rutas como archivos para compatibilidad
-    fotos: (string[] | File[]);
+    fotos: File[]; // ⚠ Cambio: Ahora son archivos File, no URLs
     servicios?: string[];
-  }, files?: File[]): Observable<Listing> {
+  }): Observable<Listing> {
     console.log('🚀 ListingsService: Creando nuevo alojamiento:', dto.titulo);
     this.dataSyncService.setLoading('listings', true);
 
     // Crear alojamiento temporal para optimistic update
     const tempId = `temp-${Date.now()}`;
     const user = this.auth.currentUser();
-    const previewImages: string[] = (Array.isArray(dto.fotos) && dto.fotos.length > 0 && typeof (dto.fotos as any)[0] === 'string')
-      ? (dto.fotos as string[])
-      : [];
+    const previewImages: string[] = [];
 
     const optimisticListing: Listing = {
       id: tempId,
@@ -494,6 +495,7 @@ export class ListingsService {
     const normalizedServicios = Array.isArray(dto.servicios)
       ? dto.servicios.map(normalizeServicio).filter(v => SERVICE_ENUMS.includes(v))
       : [];
+    // Crear JSON base para la parte "data"
     const basePayloadNoFotos = {
       titulo: dto.titulo,
       descripcion: dto.descripcion,
@@ -506,31 +508,18 @@ export class ListingsService {
       servicios: normalizedServicios,
       anfitrionId: user?.id || undefined
     } as any;
-
-    // Detectar archivos a enviar en multipart/form-data (parte 'files')
-    let filesToUpload: File[] | undefined;
-    if (Array.isArray(dto.fotos) && dto.fotos.length > 0 && dto.fotos[0] instanceof File) {
-      filesToUpload = dto.fotos as File[];
-    }
-    if (!filesToUpload && files && files.length > 0) {
-      filesToUpload = files;
+    // 2️⃣ Agregar las imágenes como archivos (parte 'files')
+    const filesToUpload: File[] = Array.isArray(dto.fotos) ? dto.fotos : [];
+    if (!filesToUpload || filesToUpload.length === 0) {
+      this.dataSyncService.setLoading('listings', false);
+      return throwError(() => new Error('Debe proporcionar al menos una imagen'));
     }
 
-    // Construir payload JSON base para la parte 'data'
-    const basePayload: any = { ...basePayloadNoFotos };
-    // Si NO hay archivos, incluir rutas/strings de fotos en el JSON
-    const hasStringFotos = Array.isArray(dto.fotos) && dto.fotos.length > 0 && typeof (dto.fotos as any)[0] === 'string';
-    if (!filesToUpload && hasStringFotos) {
-      basePayload.fotos = dto.fotos as string[];
-    }
-
-    // Construir FormData con 'data' (JSON) y 'files' (imágenes)
+    // ✅ CREAR FormData CORRECTAMENTE con 'data' y 'files'
     const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(basePayload)], { type: 'application/json' }));
-    if (filesToUpload && filesToUpload.length > 0) {
-      for (const file of filesToUpload) {
-        formData.append('files', file);
-      }
+    formData.append('data', new Blob([JSON.stringify(basePayloadNoFotos)], { type: 'application/json' }));
+    for (const file of filesToUpload) {
+      formData.append('files', file, file.name);
     }
 
     // Enviar SIEMPRE multipart/form-data para cumplir con el backend
