@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  // Usar el proxy '/api' gestionado por el SSR en producción
-  apiUrl: '/api'
+  // API base directa al backend en producción (evita depender del proxy SSR)
+  apiUrl: 'https://backend-gohost-production.up.railway.app'
 };
