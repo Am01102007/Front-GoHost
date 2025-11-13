@@ -256,3 +256,75 @@ input.error, textarea.error {
 }
 
 /* Inputs usan el estilo global; se evita override local */
+
+/* --- Estilos para Servicios (chips y accesos rápidos) --- */
+.helper {
+  margin-bottom: 0.75rem;
+  color: #64748b;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.chip .remove {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.chip .remove:hover {
+  color: #ef4444;
+}
+
+.quick-services {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-title {
+  font-weight: 600;
+  color: #374151;
+  margin-right: 6px;
+}
+
+.quick {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.9rem;
+}
+
+.quick:hover {
+  background: #f3f4f6;
+}
+
+.btn.btn-outline {
+  align-self: end;
+  height: 42px;
+}
