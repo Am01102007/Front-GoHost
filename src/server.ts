@@ -5,8 +5,6 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
-import * as nodemailer from 'nodemailer';
-import { render as renderTemplate } from './server/mail/templates';
 import { IncomingMessage } from 'node:http';
 import { join } from 'node:path';
 
@@ -181,8 +179,8 @@ app.get('/env.js', (req, res) => {
   // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
   // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
   const apiBaseUrl = '/api';
-  // Proveedor de correo: 'ssrsmtp' (enviar desde SSR con Nodemailer)
-  const mailProvider = process.env['MAIL_PROVIDER'] || 'ssrsmtp';
+  // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
+  const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
@@ -200,54 +198,7 @@ app.get('/env.js', (req, res) => {
  * Body esperado:
  * { type: string, to: string, data: object }
  */
-app.post('/mail/send', async (req, res) => {
-  try {
-    const provider = (process.env['MAIL_PROVIDER'] || 'ssrsmtp').toLowerCase();
-    if (provider !== 'ssrsmtp') {
-      res.status(501).json({ error: 'Mail provider not enabled', provider });
-      return;
-    }
-
-    const smtpHost = process.env['SMTP_HOST'];
-    const smtpPort = Number(process.env['SMTP_PORT'] || 2525);
-    const smtpUser = process.env['SMTP_USERNAME'];
-    const smtpPass = process.env['SMTP_PASSWORD'];
-    const fromEmail = process.env['SMTP_FROM_EMAIL'];
-    const fromName = process.env['SMTP_FROM_NAME'] || 'GoHost';
-    if (!smtpHost || !smtpUser || !smtpPass || !fromEmail) {
-      res.status(500).json({ error: 'SMTP not configured', missing: { smtpHost: !smtpHost, smtpUser: !smtpUser, smtpPass: !smtpPass, fromEmail: !fromEmail } });
-      return;
-    }
-
-    const { type, to, data } = req.body || {};
-    if (!to || !type) {
-      res.status(400).json({ error: 'Missing required fields', required: ['to', 'type'] });
-      return;
-    }
-
-    const { subject, html, text } = renderTemplate(type, data);
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: false,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
-
-    const info = await transporter.sendMail({
-      from: { address: fromEmail, name: fromName },
-      to,
-      subject,
-      html,
-      text,
-    });
-    res.status(200).json({ ok: true, messageId: info.messageId });
-  } catch (err: any) {
-    console.error('SSR SMTP send error:', { message: err?.message, name: err?.name });
-    res.status(500).json({ error: 'Internal Server Error', detail: err?.message || 'Unknown error' });
-  }
-});
-
-// Render moved to ./server/mail/templates
+// Mail SSR eliminado: el backend gestiona el envío de correos
 
 /**
  * Handle all other requests by rendering the Angular application.

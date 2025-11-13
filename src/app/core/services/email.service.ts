@@ -36,6 +36,7 @@ export class EmailService {
     huesped_nombre?: string;
   }): Promise<void> {
     if (typeof window === 'undefined') return; // SSR: solo cliente
+    if (!this.isSsrSmtpEnabled()) return; // backend se encarga, evitar redundancias
     const to = params.to_email || params.huesped_email;
     if (to) await this.sendViaBackend('booking_created', to, params);
   }
@@ -51,6 +52,7 @@ export class EmailService {
     recipient_role?: string;
   }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     const to = params.to_email;
     if (to) await this.sendViaBackend('booking_paid', to, params);
   }
@@ -66,6 +68,7 @@ export class EmailService {
     recipient_role?: string;
   }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     const to = params.to_email;
     if (to) await this.sendViaBackend('booking_cancelled', to, params);
   }
@@ -76,24 +79,28 @@ export class EmailService {
   /** Envía correo de "solicitud de restablecimiento de contraseña" */
   async sendPasswordResetRequested(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     await this.sendViaBackend('password_reset_requested', params.to_email, params);
   }
 
   /** Envía correo de "contraseña cambiada" */
   async sendPasswordChanged(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     await this.sendViaBackend('password_changed', params.to_email, params);
   }
 
   /** Envía correo de bienvenida tras registro */
   async sendWelcome(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     await this.sendViaBackend('welcome', params.to_email, params);
   }
 
   /** Envía correo de "perfil actualizado" */
   async sendProfileUpdated(params: { to_email: string; to_name?: string }): Promise<void> {
     if (typeof window === 'undefined') return;
+    if (!this.isSsrSmtpEnabled()) return;
     await this.sendViaBackend('profile_updated', params.to_email, params);
   }
 }
