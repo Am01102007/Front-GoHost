@@ -1,31 +1,30 @@
-SMTP.js en AppAlojamiento
+Envío de correos seguro en AppAlojamiento (SSR + Nodemailer)
 
 Resumen
-- Este proyecto puede enviar correos desde el frontend usando SMTP.js (cliente) o EmailJS.
-- Por solicitud, MAIL_PROVIDER queda en `smtpjs` por defecto.
+- El proyecto envía correos desde el servidor (SSR) usando Nodemailer contra Elastic Email.
+- `MAIL_PROVIDER` queda en `ssrsmtp` por defecto. EmailJS sigue disponible como fallback.
 
-Requisitos SMTP.js (Elastic Email)
+Requisitos (Elastic Email)
 - Cuenta de Elastic Email con credenciales SMTP (Host, Puerto, Usuario, Password).
 - Variables en entorno del frontend SSR (Railway/Local):
-  - `MAIL_PROVIDER=smtpjs`
+  - `MAIL_PROVIDER=ssrsmtp`
   - `SMTP_HOST=smtp.elasticemail.com`
   - `SMTP_PORT=2525`
-  - `SMTP_USERNAME=mhernandezg_1@uqvirtual.edu.co`
-  - `SMTP_PASSWORD=8A00CC95A838C912A883269254ABE0CCFA8A`
-  - `SMTP_FROM_EMAIL=mhernandezg_1@uqvirtual.edu.co`
+  - `SMTP_USERNAME=<usuario smtp>`
+  - `SMTP_PASSWORD=<password smtp>`
+  - `SMTP_FROM_EMAIL=<from email>`
   - `SMTP_FROM_NAME=GoHost`
 
 Dónde se configuran
-- SSR `/env.js` expone todas las claves a `window.__ENV__`.
-- Desarrollo: `public/env.js` está configurado con tus credenciales de Elastic Email (usadas sólo por tu solicitud para facilitar pruebas).
+- SSR no expone credenciales SMTP al cliente; sólo `MAIL_PROVIDER` y claves públicas de EmailJS.
+- Desarrollo: `public/env.js` no contiene secretos. Los secretos van en variables de entorno del servidor.
 
 Cómo funciona
-- `src/index.html` incluye `<script src="https://smtpjs.com/v3/smtp.js"></script>`.
-- `EmailService` detecta `MAIL_PROVIDER='smtpjs'` y llama `Email.send(...)` con tus valores SMTP.
-- No se requieren plantillas; el cuerpo del email se construye en código.
+- `EmailService` detecta `MAIL_PROVIDER='ssrsmtp'` y envía al endpoint `/mail/send` con `{ type, to, data }`.
+- El SSR compone la plantilla HTML según `type` y envía vía Nodemailer a Elastic Email.
 
 Seguridad
-- Incluir credenciales SMTP en el cliente no es seguro. Para producción se recomienda un endpoint backend (Mailtrap API) o un SMTP en el servidor.
+- Las credenciales SMTP nunca se exponen al cliente. El envío se realiza exclusivamente en el servidor.
 
 Prueba rápida
 1. Configura variables en tu entorno de despliegue (Railway) o en tu `.env` local exportadas al proceso del SSR.
@@ -33,5 +32,5 @@ Prueba rápida
 3. Prueba reset de contraseña y cambios de perfil para correos adicionales.
 
 Referencia
-- Guía SMTP.js: https://mailtrap.io/es/blog/javascript-send-email/#Enviar-emails-usando-SMTPjs
+- Nodemailer: https://nodemailer.com/about/
 - Elastic Email SMTP: https://elasticemail.com/developers/documentation/smtp

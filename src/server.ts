@@ -5,6 +5,8 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
+import nodemailer from 'nodemailer';
+import { render as renderTemplate } from './server/mail/templates';
 import { IncomingMessage } from 'node:http';
 import { join } from 'node:path';
 
@@ -179,8 +181,8 @@ app.get('/env.js', (req, res) => {
   // Fijar siempre '/api' como base para el cliente, en cualquier entorno.
   // El SSR reenvía '/api/*' al backend configurado por API_TARGET.
   const apiBaseUrl = '/api';
-  // Proveedor de correo (emailjs | mailtrap)
-  const mailProvider = process.env['MAIL_PROVIDER'] || 'smtpjs';
+  // Proveedor de correo: 'ssrsmtp' (enviar desde SSR) | 'emailjs'
+  const mailProvider = process.env['MAIL_PROVIDER'] || 'ssrsmtp';
   // Claves de EmailJS tomadas del entorno del servidor (Railway/Local)
   const emailPublic = process.env['EMAILJS_PUBLIC_KEY'] || '';
   const emailService = process.env['EMAILJS_SERVICE_ID'] || '';
@@ -191,13 +193,6 @@ app.get('/env.js', (req, res) => {
   const emailTemplatePasswordChanged = process.env['EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED'] || '';
   const emailTemplateWelcome = process.env['EMAILJS_TEMPLATE_ID_WELCOME'] || '';
   const emailTemplateProfileUpdated = process.env['EMAILJS_TEMPLATE_ID_PROFILE_UPDATED'] || '';
-  // Config SMTP para SMTP.js (Mailtrap)
-  const smtpHost = process.env['SMTP_HOST'] || '';
-  const smtpPort = process.env['SMTP_PORT'] || '';
-  const smtpUsername = process.env['SMTP_USERNAME'] || '';
-  const smtpPassword = process.env['SMTP_PASSWORD'] || '';
-  const smtpFromEmail = process.env['SMTP_FROM_EMAIL'] || '';
-  const smtpFromName = process.env['SMTP_FROM_NAME'] || '';
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
@@ -210,81 +205,68 @@ app.get('/env.js', (req, res) => {
     EMAILJS_TEMPLATE_ID_PASSWORD_CHANGED: emailTemplatePasswordChanged,
     EMAILJS_TEMPLATE_ID_WELCOME: emailTemplateWelcome,
     EMAILJS_TEMPLATE_ID_PROFILE_UPDATED: emailTemplateProfileUpdated,
-    SMTP_HOST: smtpHost,
-    SMTP_PORT: smtpPort,
-    SMTP_USERNAME: smtpUsername,
-    SMTP_PASSWORD: smtpPassword,
-    SMTP_FROM_EMAIL: smtpFromEmail,
-    SMTP_FROM_NAME: smtpFromName,
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
 });
 
 /**
- * Endpoint de envío de correo vía Mailtrap
- * Requiere variables de entorno:
- * - MAIL_PROVIDER=mailtrap
- * - MAILTRAP_API_TOKEN (Bearer)
- * - MAILTRAP_FROM_EMAIL
- * - MAILTRAP_FROM_NAME (opcional)
+ * Endpoint de envío de correo vía SSR usando Nodemailer (Elastic Email)
+ * Variables de entorno requeridas (NO se exponen al cliente):
+ * - MAIL_PROVIDER=ssrsmtp
+ * - SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
+ * - SMTP_FROM_EMAIL, SMTP_FROM_NAME
+ * Body esperado:
+ * { type: string, to: string, data: object }
  */
 app.post('/mail/send', async (req, res) => {
   try {
-    const provider = process.env['MAIL_PROVIDER'] || 'emailjs';
-    if (provider !== 'mailtrap') {
+    const provider = (process.env['MAIL_PROVIDER'] || 'ssrsmtp').toLowerCase();
+    if (provider !== 'ssrsmtp') {
       res.status(501).json({ error: 'Mail provider not enabled', provider });
       return;
     }
 
-    const token = process.env['MAILTRAP_API_TOKEN'];
-    const fromEmail = process.env['MAILTRAP_FROM_EMAIL'];
-    const fromName = process.env['MAILTRAP_FROM_NAME'] || 'GoHost';
-    if (!token || !fromEmail) {
-      res.status(500).json({ error: 'Mailtrap not configured', missing: { token: !token, fromEmail: !fromEmail } });
+    const smtpHost = process.env['SMTP_HOST'];
+    const smtpPort = Number(process.env['SMTP_PORT'] || 2525);
+    const smtpUser = process.env['SMTP_USERNAME'];
+    const smtpPass = process.env['SMTP_PASSWORD'];
+    const fromEmail = process.env['SMTP_FROM_EMAIL'];
+    const fromName = process.env['SMTP_FROM_NAME'] || 'GoHost';
+    if (!smtpHost || !smtpUser || !smtpPass || !fromEmail) {
+      res.status(500).json({ error: 'SMTP not configured', missing: { smtpHost: !smtpHost, smtpUser: !smtpUser, smtpPass: !smtpPass, fromEmail: !fromEmail } });
       return;
     }
 
-    const { to, subject, text, html, cc, bcc } = req.body || {};
-    const toEmail = typeof to === 'string' ? to : to?.email;
-    if (!toEmail || !subject) {
-      res.status(400).json({ error: 'Missing required fields', required: ['to', 'subject'] });
+    const { type, to, data } = req.body || {};
+    if (!to || !type) {
+      res.status(400).json({ error: 'Missing required fields', required: ['to', 'type'] });
       return;
     }
 
-    const payload: any = {
-      from: { email: fromEmail, name: fromName },
-      to: [{ email: toEmail }],
-      subject,
-    };
-    if (text) payload.text = String(text);
-    if (html) payload.html = String(html);
-    if (Array.isArray(cc)) payload.cc = cc.map((e: any) => ({ email: e?.email || e }));
-    if (Array.isArray(bcc)) payload.bcc = bcc.map((e: any) => ({ email: e?.email || e }));
-
-    const resp = await fetch('https://send.api.mailtrap.io/api/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    const { subject, html, text } = renderTemplate(type, data);
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: false,
+      auth: { user: smtpUser, pass: smtpPass },
     });
 
-    const respText = await resp.text();
-    let json: any = null;
-    try { json = JSON.parse(respText); } catch { json = { raw: respText }; }
-
-    if (resp.ok) {
-      res.status(200).json({ ok: true, result: json });
-    } else {
-      res.status(resp.status).json({ ok: false, status: resp.status, result: json });
-    }
+    const info = await transporter.sendMail({
+      from: { address: fromEmail, name: fromName },
+      to,
+      subject,
+      html,
+      text,
+    });
+    res.status(200).json({ ok: true, messageId: info.messageId });
   } catch (err: any) {
-    console.error('Mailtrap send error:', { message: err?.message, name: err?.name });
+    console.error('SSR SMTP send error:', { message: err?.message, name: err?.name });
     res.status(500).json({ error: 'Internal Server Error', detail: err?.message || 'Unknown error' });
   }
 });
+
+// Render moved to ./server/mail/templates
 
 /**
  * Handle all other requests by rendering the Angular application.

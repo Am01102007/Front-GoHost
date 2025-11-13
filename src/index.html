@@ -14,8 +14,7 @@
   <app-root></app-root>
   <!-- Carga configuración runtime desde /env.js para apuntar a backend en Railway -->
   <script src="/env.js"></script>
-  <!-- SMTP.js para envío de correos desde frontend (usar con precaución) -->
-  <script src="https://smtpjs.com/v3/smtp.js"></script>
+  <!-- Eliminado SMTP.js: el envío ahora es seguro vía SSR/Nodemailer -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
   <script>
     // Configura el token público de Mapbox (pk.*) y persiste en localStorage
