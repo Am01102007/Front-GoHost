@@ -251,29 +251,29 @@ export class AuthService {
    * @private
    */
   private mapToUser(dto: any): User {
-    const resolveRole = (d: any): 'ANFITRION' | 'HUESPED' => {
-      const raw = (d?.rol ?? d?.role ?? d?.userRole ?? d?.rolUsuario ?? d?.tipoUsuario ?? '').toString();
+    const d = dto ?? {};
+    const current = this.currentUser();
+    const resolveRole = (x: any): 'ANFITRION' | 'HUESPED' => {
+      const raw = (x?.rol ?? x?.role ?? x?.userRole ?? x?.rolUsuario ?? x?.tipoUsuario ?? '').toString();
       const lc = raw.toLowerCase();
       if (lc.includes('anfitrion') || lc.includes('host')) return 'ANFITRION';
       if (lc.includes('huesped') || lc.includes('guest')) return 'HUESPED';
-      // Roles por authorities/roles del backend (Spring Security, etc.)
-      const auths: string[] = Array.isArray(d?.authorities) ? d.authorities : Array.isArray(d?.roles) ? d.roles : [];
-      const authsLc = auths.map(x => String(x).toLowerCase());
+      const auths: string[] = Array.isArray(x?.authorities) ? x.authorities : Array.isArray(x?.roles) ? x.roles : [];
+      const authsLc = auths.map(val => String(val).toLowerCase());
       if (authsLc.some(a => a.includes('anfitrion') || a.includes('role_host') || a.includes('host'))) return 'ANFITRION';
       if (authsLc.some(a => a.includes('huesped') || a.includes('role_guest') || a.includes('guest'))) return 'HUESPED';
-      // Por defecto, mantener el rol actual si existe
-      return (this.currentUser()?.rol === 'ANFITRION') ? 'ANFITRION' : 'HUESPED';
+      return (current?.rol === 'ANFITRION') ? 'ANFITRION' : 'HUESPED';
     };
 
     return {
-      id: String(dto.id ?? this.currentUser()?.id ?? ''),
-      email: String(dto.email ?? this.currentUser()?.email ?? ''),
-      nombre: String(dto.nombre ?? this.currentUser()?.nombre ?? ''),
-      apellido: String(dto.apellido ?? this.currentUser()?.apellido ?? ''),
-      telefono: dto.telefono || this.currentUser()?.telefono || '',
-      rol: resolveRole(dto),
-      fechaNacimiento: dto.fechaNacimiento || this.currentUser()?.fechaNacimiento || '',
-      avatarUrl: dto.avatarUrl || dto.avatar || this.currentUser()?.avatarUrl
+      id: String(d.id ?? current?.id ?? ''),
+      email: String(d.email ?? current?.email ?? ''),
+      nombre: String(d.nombre ?? current?.nombre ?? ''),
+      apellido: String(d.apellido ?? d.apellidos ?? current?.apellido ?? ''),
+      telefono: d.telefono ?? current?.telefono ?? '',
+      rol: resolveRole(d),
+      fechaNacimiento: d.fechaNacimiento ?? current?.fechaNacimiento ?? '',
+      avatarUrl: d.avatarUrl ?? d.avatar ?? current?.avatarUrl
     };
   }
 
