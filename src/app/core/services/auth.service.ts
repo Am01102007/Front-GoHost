@@ -4,6 +4,7 @@ import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { map, tap, catchError, finalize } from 'rxjs/operators';
 import { User } from '../models/user.model';
 import { EmailService } from './email.service';
+import { NotificationsService } from './notifications.service';
 import { DataSyncService } from './data-sync.service';
 import { API_BASE } from '../config';
 
@@ -48,6 +49,7 @@ export class AuthService {
   private readonly API_URL = API_BASE;
   private readonly STORAGE_KEY = 'auth_user';
   private readonly TOKEN_KEY = 'auth_token';
+  private readonly notifications = inject(NotificationsService);
 
   /**
    * Signal reactivo que contiene el usuario actual autenticado.
@@ -423,7 +425,18 @@ export class AuthService {
         try {
           this.emailService.init();
           if (user?.email) {
-            this.emailService.sendWelcome({ to_email: user.email, to_name: user.nombre });
+            if (this.emailService.isWelcomeConfigured()) {
+              this.emailService
+                .sendWelcome({ to_email: user.email, to_name: user.nombre })
+                .then(() => {
+                  try { this.notifications.success('Correo de bienvenida enviado'); } catch {}
+                })
+                .catch(() => {
+                  try { this.notifications.error('No se pudo enviar el correo de bienvenida'); } catch {}
+                });
+            } else {
+              try { this.notifications.info('Correo de bienvenida no configurado'); } catch {}
+            }
           }
         } catch {}
       }),

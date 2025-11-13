@@ -35,6 +35,11 @@ export class EmailService {
     this.initialized = true;
   }
 
+  /** Indica si la plantilla de bienvenida está correctamente configurada */
+  isWelcomeConfigured(): boolean {
+    return !!(EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID_WELCOME);
+  }
+
   /** Envía correo de "reserva creada" (pendiente) */
   async sendBookingCreated(params: {
     to_email?: string;

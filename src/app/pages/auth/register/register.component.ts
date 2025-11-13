@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -15,6 +16,7 @@ export class RegisterComponent {
   fb = inject(FormBuilder);
   auth = inject(AuthService);
   router = inject(Router);
+  notify = inject(NotificationsService);
   tipoDocumentoOptions = ['CC', 'CE', 'PASAPORTE', 'NIT', 'DNI'];
 
   form = this.fb.group({
@@ -42,6 +44,14 @@ export class RegisterComponent {
       telefono: v.telefono!,
       rol: (v.rol === 'anfitrion' ? 'ANFITRION' : 'HUESPED') as 'ANFITRION' | 'HUESPED'
     })
-      .subscribe(() => this.router.navigate(['/']));
+      .subscribe({
+        next: () => {
+          try { this.notify.success('Registro exitoso', 'Tu cuenta fue creada correctamente'); } catch {}
+          this.router.navigate(['/']);
+        },
+        error: (err) => {
+          try { this.notify.httpError(err); } catch {}
+        }
+      });
   }
 }
