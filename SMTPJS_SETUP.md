@@ -4,20 +4,20 @@ Resumen
 - Este proyecto puede enviar correos desde el frontend usando SMTP.js (cliente) o EmailJS.
 - Por solicitud, MAIL_PROVIDER queda en `smtpjs` por defecto.
 
-Requisitos SMTP.js (Mailtrap)
-- Cuenta de Mailtrap con credenciales SMTP del inbox (Host, Puerto, Usuario, Password).
+Requisitos SMTP.js (Elastic Email)
+- Cuenta de Elastic Email con credenciales SMTP (Host, Puerto, Usuario, Password).
 - Variables en entorno del frontend SSR (Railway/Local):
   - `MAIL_PROVIDER=smtpjs`
-  - `SMTP_HOST=smtp.mailtrap.io`
+  - `SMTP_HOST=smtp.elasticemail.com`
   - `SMTP_PORT=2525`
-  - `SMTP_USERNAME=<tu usuario SMTP>`
-  - `SMTP_PASSWORD=<tu password SMTP>`
-  - `SMTP_FROM_EMAIL=no-reply@example.test`
+  - `SMTP_USERNAME=mhernandezg_1@uqvirtual.edu.co`
+  - `SMTP_PASSWORD=8A00CC95A838C912A883269254ABE0CCFA8A`
+  - `SMTP_FROM_EMAIL=mhernandezg_1@uqvirtual.edu.co`
   - `SMTP_FROM_NAME=GoHost`
 
 Dónde se configuran
 - SSR `/env.js` expone todas las claves a `window.__ENV__`.
-- Desarrollo: `public/env.js` tiene placeholders; no agregar secretos reales al repositorio.
+- Desarrollo: `public/env.js` está configurado con tus credenciales de Elastic Email (usadas sólo por tu solicitud para facilitar pruebas).
 
 Cómo funciona
 - `src/index.html` incluye `<script src="https://smtpjs.com/v3/smtp.js"></script>`.
@@ -33,4 +33,5 @@ Prueba rápida
 3. Prueba reset de contraseña y cambios de perfil para correos adicionales.
 
 Referencia
-- Guía: https://mailtrap.io/es/blog/javascript-send-email/#Enviar-emails-usando-SMTPjs
+- Guía SMTP.js: https://mailtrap.io/es/blog/javascript-send-email/#Enviar-emails-usando-SMTPjs
+- Elastic Email SMTP: https://elasticemail.com/developers/documentation/smtp

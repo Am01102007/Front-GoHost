@@ -4,12 +4,12 @@
     API_BASE_URL: w.__ENV__?.API_BASE_URL || '/api',
     // Selección del proveedor de correo: 'smtpjs' | 'emailjs'
     MAIL_PROVIDER: w.__ENV__?.MAIL_PROVIDER || 'smtpjs',
-    // SMTP.js (Mailtrap) - NO usar credenciales reales en repositorio
-    SMTP_HOST: w.__ENV__?.SMTP_HOST || 'smtp.mailtrap.io',
+    // SMTP.js (Elastic Email)
+    SMTP_HOST: w.__ENV__?.SMTP_HOST || 'smtp.elasticemail.com',
     SMTP_PORT: w.__ENV__?.SMTP_PORT || '2525',
-    SMTP_USERNAME: w.__ENV__?.SMTP_USERNAME || '', // colocar usuario SMTP de Mailtrap en entorno
-    SMTP_PASSWORD: w.__ENV__?.SMTP_PASSWORD || '', // colocar contraseña SMTP de Mailtrap en entorno
-    SMTP_FROM_EMAIL: w.__ENV__?.SMTP_FROM_EMAIL || 'no-reply@example.test',
+    SMTP_USERNAME: w.__ENV__?.SMTP_USERNAME || 'mhernandezg_1@uqvirtual.edu.co',
+    SMTP_PASSWORD: w.__ENV__?.SMTP_PASSWORD || '8A00CC95A838C912A883269254ABE0CCFA8A',
+    SMTP_FROM_EMAIL: w.__ENV__?.SMTP_FROM_EMAIL || 'mhernandezg_1@uqvirtual.edu.co',
     SMTP_FROM_NAME: w.__ENV__?.SMTP_FROM_NAME || 'GoHost',
     EMAILJS_PUBLIC_KEY: 'ZYoAZIvht99JLWSGY',
     EMAILJS_SERVICE_ID: 'service_755g249',
