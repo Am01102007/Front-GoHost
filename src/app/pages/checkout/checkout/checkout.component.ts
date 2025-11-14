@@ -32,6 +32,8 @@ export class CheckoutComponent {
     metodoPago: ['tarjeta', Validators.required]
   });
 
+  saving = false;
+
   private crearReserva(estado: 'pendiente' | 'pagado') {
     if (this.form.invalid) return;
     if (!this.auth.currentUser()) {
@@ -40,17 +42,19 @@ export class CheckoutComponent {
       return;
     }
     const v = this.form.value;
+    this.saving = true;
     this.bookings.create({
       alojamientoId: v.listingId!,
       checkIn: v.fechaInicio!,
       checkOut: v.fechaFin!,
       numeroHuespedes: v.huespedes!
-    }).subscribe(res => {
-      // Enviar correo de "reserva creada" vía backend SSR
-      try {
-        const user = this.auth.userProfile();
-        this.email.sendBookingCreated({
-          to_email: user?.email,
+    }).subscribe({
+      next: (res) => {
+        // Enviar correo de "reserva creada" vía backend SSR
+        try {
+          const user = this.auth.userProfile();
+          this.email.sendBookingCreated({
+            to_email: user?.email,
           to_name: user?.nombre,
           alojamientoId: v.listingId!,
           fechaInicio: v.fechaInicio!,
@@ -60,17 +64,24 @@ export class CheckoutComponent {
           huesped_nombre: user?.nombre
         });
       } catch {}
-      if (estado === 'pagado') {
-        this.bookings.updateStatus(res.id, 'pagado').subscribe(() => {
-          this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente');
+        if (estado === 'pagado') {
+          this.bookings.updateStatus(res.id, 'pagado').subscribe({
+            next: () => {
+              this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente');
+              this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
+              this.bookings.fetchMine().subscribe(() => this.router.navigate(['/mis-reservas']));
+            },
+            error: (err) => { this.notifications.httpError(err); },
+            complete: () => { this.saving = false; }
+          });
+        } else {
+          this.notifications.success('Reserva creada', 'Tu reserva quedó pendiente de pago');
           this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
           this.bookings.fetchMine().subscribe(() => this.router.navigate(['/mis-reservas']));
-        });
-      } else {
-        this.notifications.success('Reserva creada', 'Tu reserva quedó pendiente de pago');
-        this.form.reset({ huespedes: 1, metodoPago: 'tarjeta' });
-        this.bookings.fetchMine().subscribe(() => this.router.navigate(['/mis-reservas']));
-      }
+          this.saving = false;
+        }
+      },
+      error: (err) => { this.notifications.httpError(err); this.saving = false; }
     });
   }
 

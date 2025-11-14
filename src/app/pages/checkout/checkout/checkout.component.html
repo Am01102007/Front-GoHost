@@ -18,9 +18,13 @@
       </select>
     </label>
     <div class="acciones">
-      <button class="btn primary" (click)="reservarPagado()" [disabled]="form.invalid">Pagar reserva ahora</button>
-      <button class="btn ghost" (click)="reservarPendiente()" [disabled]="form.invalid">Pagar luego</button>
-      <button class="btn danger" (click)="cancelar()">Cancelar</button>
+      <button class="btn primary" (click)="reservarPagado()" [disabled]="form.invalid || saving" [attr.aria-busy]="saving">
+        {{ saving ? 'Procesando...' : 'Pagar reserva ahora' }}
+      </button>
+      <button class="btn ghost" (click)="reservarPendiente()" [disabled]="form.invalid || saving">
+        {{ saving ? 'Procesando...' : 'Pagar luego' }}
+      </button>
+      <button class="btn danger" (click)="cancelar()" [disabled]="saving">Cancelar</button>
     </div>
     <p class="hint">Completa tus fechas y huéspedes para continuar.</p>
   </aside>

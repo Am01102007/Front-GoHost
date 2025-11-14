@@ -22,6 +22,7 @@ export class MyBookingsComponent implements OnInit {
   email = inject(EmailService);
 
   tab: 'activas' | 'canceladas' = 'activas';
+  actionLoading: Record<string, boolean> = {};
 
   ngOnInit() {
     // Cargar reservas del huésped autenticado y almacenarlas en la señal
@@ -49,8 +50,11 @@ export class MyBookingsComponent implements OnInit {
   }
 
   cancelar(id: string) {
+    this.actionLoading[id] = true;
     this.bookingsSvc.cancelar(id).subscribe({
-      next: () => this.notifications.success('Reserva cancelada', 'Se canceló la reserva correctamente')
+      next: () => this.notifications.success('Reserva cancelada', 'Se canceló la reserva correctamente'),
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
     try {
       const b = this.bookingsSvc.bookings().find(x => x.id === id);
@@ -67,8 +71,11 @@ export class MyBookingsComponent implements OnInit {
   }
 
   pagar(id: string) {
+    this.actionLoading[id] = true;
     this.bookingsSvc.pagar(id).subscribe({
-      next: () => this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente')
+      next: () => this.notifications.success('Reserva pagada', 'Tu reserva fue confirmada exitosamente'),
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
     try {
       const b = this.bookingsSvc.bookings().find(x => x.id === id);
