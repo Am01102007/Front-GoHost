@@ -181,10 +181,17 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  // API base: construir URL para el cliente asegurando el prefijo '/api'
-  const rawTarget = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
-  const normalizedTarget = rawTarget.endsWith('/') ? rawTarget.slice(0, -1) : rawTarget;
-  const apiBaseUrl = normalizedTarget.endsWith('/api') ? normalizedTarget : `${normalizedTarget}/api`;
+  // API base: si estamos en localhost, usar proxy SSR '/api' para evitar CORS;
+  // en producción, apuntar al backend remoto público.
+  const isLocalHost = /localhost|127\.0\.0\.1/i.test(req.hostname || '');
+  let apiBaseUrl: string;
+  if (isLocalHost) {
+    apiBaseUrl = '/api';
+  } else {
+    const rawTarget = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
+    const normalizedTarget = rawTarget.endsWith('/') ? rawTarget.slice(0, -1) : rawTarget;
+    apiBaseUrl = normalizedTarget.endsWith('/api') ? normalizedTarget : `${normalizedTarget}/api`;
+  }
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
   const payloadObj = {
