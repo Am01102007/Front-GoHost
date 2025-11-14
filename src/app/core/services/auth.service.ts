@@ -396,6 +396,8 @@ export class AuthService {
     this.error.set(null);
 
     const url = `${this.API_URL}/auth/register`;
+    const t0 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+    let lastStatus = 0;
     const normalizeDate = (d?: string): string | undefined => {
       if (!d) return undefined;
       const s = String(d).trim();
@@ -432,18 +434,22 @@ export class AuthService {
     };
     if (userData.rol) payload.rol = userData.rol;
 
-  return this.http.post<any>(url, payload).pipe(
-      map(response => {
-        // Guardar token si viene en la respuesta (auto-login)
-        if (response.token) {
+  return this.http.post<any>(url, payload, { observe: 'response' }).pipe(
+      map(resp => {
+        lastStatus = resp.status || 0;
+        const body = resp.body ?? {};
+        if (body.token) {
           try {
             if (AuthService.hasStorage()) {
-              localStorage.setItem(this.TOKEN_KEY, response.token);
+              localStorage.setItem(this.TOKEN_KEY, body.token);
             }
           } catch {}
         }
-        
-        return this.mapToUser(response.user || response);
+        const user = this.mapToUser(body.user || body);
+        const t1 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+        const dur = Math.round(t1 - t0);
+        console.log(`[HTTP POST] ${url} -> ${lastStatus} | ${dur} ms`);
+        return user;
       }),
       tap(user => {
         // Auto-login después del registro si hay token
@@ -469,9 +475,9 @@ export class AuthService {
         } catch {}
       }),
       catchError(err => {
-        console.error('❌ AuthService.register error:', err);
-        
-        // Mapear errores comunes
+        const t1 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+        const dur = Math.round(t1 - t0);
+        console.error(`[HTTP POST] ${url} -> ${err?.status ?? 0} | ${dur} ms | ${err?.message ?? 'Unknown Error'}`);
         let errorMessage = 'Error al registrar usuario. Inténtalo de nuevo.';
         if (err.status === 409) {
           errorMessage = 'El email ya está registrado. Usa otro email.';
@@ -480,7 +486,6 @@ export class AuthService {
         } else if (err.status === 0) {
           errorMessage = 'Error de conexión. Verifica tu internet.';
         }
-        
         this.error.set(errorMessage);
         return throwError(() => err);
       }),

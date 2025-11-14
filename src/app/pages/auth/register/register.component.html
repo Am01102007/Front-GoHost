@@ -23,11 +23,19 @@
       </select>
     </label>
     <label>Fecha de nacimiento<input type="date" formControlName="fechaNacimiento" /></label>
-    <button type="submit" class="btn btn-primary">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-      </svg>
-      Crear Cuenta
+    <button type="submit" class="btn btn-primary" [disabled]="auth.isLoading()" [attr.aria-busy]="auth.isLoading()">
+      <ng-container *ngIf="!auth.isLoading(); else loadingTpl">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        Crear Cuenta
+      </ng-container>
+      <ng-template #loadingTpl>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="24" height="24" class="spin">
+          <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="60"></circle>
+        </svg>
+        Creando...
+      </ng-template>
     </button>
   </form>
 </div>
