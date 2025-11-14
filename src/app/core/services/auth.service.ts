@@ -425,7 +425,8 @@ export class AuthService {
     this.loading.set(true);
     this.error.set(null);
 
-    const url = `${this.API_URL}/auth/register`;
+    const isHost = String(userData.rol || '').toUpperCase() === 'ANFITRION';
+    const url = `${this.API_URL}${isHost ? '/auth/register/anfitrion' : '/auth/register'}`;
     const t0 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
     let lastStatus = 0;
     let slowTimer: any;
