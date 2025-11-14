@@ -1,17 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { EFFECTIVE_MAIL_PROVIDER } from '../../shared/email.config';
+import { EFFECTIVE_MAIL_PROVIDER, MAIL_ENABLED } from '../../shared/email.config';
 
 @Injectable({ providedIn: 'root' })
 export class EmailService {
   constructor(private http: HttpClient) {}
   
   private isSsrSmtpEnabled(): boolean {
-    return (EFFECTIVE_MAIL_PROVIDER || '').toLowerCase() === 'ssrsmtp';
+    return !MAIL_ENABLED && (EFFECTIVE_MAIL_PROVIDER || '').toLowerCase() === 'ssrsmtp';
   }
 
   private async sendViaBackend(type: string, to: string, data: any): Promise<void> {
     try {
+      if (!this.isSsrSmtpEnabled()) return;
       await this.http.post('/mail/send', { type, to, data }).toPromise();
     } catch (err) {
       console.error('Backend mail send error:', err);
@@ -36,7 +37,7 @@ export class EmailService {
     huesped_nombre?: string;
   }): Promise<void> {
     if (typeof window === 'undefined') return; // SSR: solo cliente
-    if (!this.isSsrSmtpEnabled()) return; // backend se encarga, evitar redundancias
+    if (!this.isSsrSmtpEnabled()) return; // backend se encarga o MAIL_ENABLED=true
     const to = params.to_email || params.huesped_email;
     if (to) await this.sendViaBackend('booking_created', to, params);
   }
