@@ -152,10 +152,18 @@ export class AuthService {
       }
     });
 
-    // Suscribirse a cambios externos de usuario
+    // Suscribirse a cambios externos de usuario y refrescar perfil en segundo plano
     this.dataSyncService.onDataChange('users').subscribe(() => {
-      console.log('🔄 AuthService: Recargando datos de usuario por cambio externo');
-      this.validateSession();
+      console.log('🔄 AuthService: Refrescando perfil por cambio externo');
+      this.loadProfile().subscribe({
+        next: (u) => {
+          this.currentUser.set(u);
+        },
+        error: () => {
+          // Si falla el perfil, al menos validar sesión
+          this.validateSession();
+        }
+      });
     });
 
     // Validar sesión al inicializar
