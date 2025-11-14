@@ -55,8 +55,19 @@ export class RegisterComponent {
     })
       .subscribe({
         next: () => {
-          try { this.notify.success('Registro exitoso', 'Tu cuenta fue creada correctamente'); } catch {}
-          this.router.navigate(['/']);
+          const email = v.email!;
+          const password = v.password!;
+          this.auth.login(email, password).subscribe({
+            next: () => {
+              try { this.notify.success('Registro exitoso', 'Sesión iniciada y redirigido'); } catch {}
+              this.router.navigate(['/']);
+            },
+            error: (err) => {
+              try { this.notify.httpError(err); } catch {}
+              // Aun sin login automático, redirigir al inicio
+              this.router.navigate(['/']);
+            }
+          });
         },
         error: (err) => {
           try { this.notify.httpError(err); } catch {}
