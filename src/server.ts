@@ -174,22 +174,8 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
  */
 
 /**
- * Serve static files from /browser
- */
-app.use(
-  express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: false,
-    redirect: false,
-    setHeaders: (res, filePath) => {
-      // Cache estático fuerte con immutable para assets
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    }
-  }),
-);
-
-/**
  * Endpoint de configuración runtime: /env.js
+ * Debe declararse ANTES de static para sobrescribir el archivo generado.
  * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
  */
 app.get('/env.js', (req, res) => {
@@ -208,6 +194,26 @@ app.get('/env.js', (req, res) => {
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
 });
+
+/**
+ * Serve static files from /browser
+ */
+app.use(
+  express.static(browserDistFolder, {
+    maxAge: '1y',
+    index: false,
+    redirect: false,
+    setHeaders: (res, filePath) => {
+      // Cache estático fuerte con immutable para assets
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }),
+);
+
+/**
+ * Endpoint de configuración runtime: /env.js
+ * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
+ */
 
 /**
  * Endpoint de envío de correo vía SSR usando Nodemailer (Elastic Email)

@@ -5,12 +5,19 @@
   const isLocal = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(loc.hostname);
   const defaultApiBase = isLocal ? '/api' : 'https://backend-gohost-production.up.railway.app/api';
 
-  w.__ENV__ = Object.assign({}, w.__ENV__ || {}, {
-    // API base: usa '/api' en local (dev) y remoto en producción
-    API_BASE_URL: w.__ENV__?.API_BASE_URL || defaultApiBase,
-    // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
-    MAIL_PROVIDER: w.__ENV__?.MAIL_PROVIDER || 'backend'
-  });
+  // En producción, forzar backend remoto para evitar que quede '/api' por error
+  if (!isLocal) {
+    w.__ENV__ = Object.assign({}, w.__ENV__ || {}, {
+      API_BASE_URL: defaultApiBase,
+      MAIL_PROVIDER: 'backend'
+    });
+  } else {
+    // En desarrollo, permitir override y usar proxy '/api'
+    w.__ENV__ = Object.assign({}, w.__ENV__ || {}, {
+      API_BASE_URL: w.__ENV__?.API_BASE_URL || defaultApiBase,
+      MAIL_PROVIDER: w.__ENV__?.MAIL_PROVIDER || 'backend'
+    });
+  }
 
   // Log ligero para diagnóstico
   try { console.debug('[env] API_BASE_URL =', w.__ENV__.API_BASE_URL); } catch {}
