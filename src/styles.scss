@@ -226,6 +226,7 @@ textarea:focus {
   gap: var(--space-2);
   white-space: nowrap;
   user-select: none;
+  -webkit-user-select: none; /* compatibilidad Safari */
 }
 
 .btn:focus {

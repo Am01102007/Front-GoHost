@@ -20,6 +20,18 @@ process.env['HTTPS_PROXY'] = process.env['HTTPS_PROXY'] ?? '';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+// Seguridad básica y compatibilidad de respuestas
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Por defecto, no cachear respuestas dinámicas
+  if (!req.url.startsWith('/assets') && !req.url.startsWith('/env.js')) {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
 const angularApp = new AngularNodeAppEngine();
 
 // Parse JSON bodies for custom endpoints
@@ -148,6 +160,7 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
       res.status(400).json({ error: 'Bad Request', detail: 'Stream error' });
     });
 });
+}
 /**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
@@ -168,6 +181,10 @@ app.use(
     maxAge: '1y',
     index: false,
     redirect: false,
+    setHeaders: (res, filePath) => {
+      // Cache estático fuerte con immutable para assets
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
   }),
 );
 
@@ -176,7 +193,8 @@ app.use(
  * Expone window.__ENV__.API_BASE_URL para que el cliente use el backend correcto.
  */
 app.get('/env.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
   // API base: construir URL para el cliente asegurando el prefijo '/api'
   const rawTarget = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
   const normalizedTarget = rawTarget.endsWith('/') ? rawTarget.slice(0, -1) : rawTarget;
@@ -189,8 +207,7 @@ app.get('/env.js', (req, res) => {
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
-  });
-}
+});
 
 /**
  * Endpoint de envío de correo vía SSR usando Nodemailer (Elastic Email)
