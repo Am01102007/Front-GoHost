@@ -49,7 +49,7 @@ export const routes: Routes = [
   { path: 'recuperar', component: ResetPasswordComponent, canActivate: [noAuthGuard] },
 
   // Rutas comunes para usuarios autenticados
-  { path: 'perfil', component: EditProfileComponent, canActivate: [authGuard], canDeactivate: [pendingChangesGuard] },
+  { path: 'perfil', component: EditProfileComponent, canActivate: [authGuard] },
   { path: 'mis-mensajes', component: MyMessagesComponent, canActivate: [authGuard] },
   { path: 'metodos-de-pago', loadComponent: () => import('./pages/payments/payment-methods/payment-methods.component').then(m => m.PaymentMethodsComponent), canActivate: [authGuard] },
 
