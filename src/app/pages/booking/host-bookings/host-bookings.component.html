@@ -23,6 +23,10 @@
   </div>
 
   <div class="content">
+    <div class="error-banner" *ngIf="errorMsg()">
+      <span class="msg">{{ errorMsg() }}</span>
+      <button class="btn-primary" (click)="retry()">Reintentar</button>
+    </div>
     <div class="empty" *ngIf="items.length === 0">
       <img src="/icons/calendar.svg" alt="Reservas" width="64" height="64" />
       <h3>No hay reservas para mostrar</h3>

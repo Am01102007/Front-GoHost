@@ -51,3 +51,4 @@
 .skeleton-line.short{width:60%}
 .skeleton-btn{width:100px;height:32px;border-radius:8px;background:linear-gradient(90deg,#eee,#f5f5f5,#eee);background-size:200% 100%;animation:skeleton 1.2s infinite}
 @keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.error-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid #fee2e2;background:#fef2f2;color:#991b1b;border-radius:10px;padding:12px;margin-bottom:12px}

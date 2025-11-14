@@ -143,6 +143,10 @@
   </div>
 
   <div class="content-section">
+    <div class="error-banner" *ngIf="errorMsg() && !loading()">
+      <span class="msg">{{ errorMsg() }}</span>
+      <button type="button" class="btn btn-secondary" (click)="retry()">Reintentar</button>
+    </div>
     <!-- Loading state -->
     <div class="loading-state" *ngIf="loading()">
       <div class="loading-spinner"></div>

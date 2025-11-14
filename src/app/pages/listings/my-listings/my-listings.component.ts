@@ -64,6 +64,7 @@ export class MyListingsComponent implements OnInit, OnDestroy {
   readonly loading = computed(() => 
     this.listingsSvc.loading() || this.bookingsSvc.loading()
   );
+  readonly errorMsg = signal<string | null>(null);
   
   /**
    * Total de reservas para los alojamientos del anfitrión
@@ -157,9 +158,11 @@ export class MyListingsComponent implements OnInit, OnDestroy {
     const sub1 = this.listingsSvc.fetchForHost().subscribe({
       next: (listings) => {
         console.log(`✅ Alojamientos cargados: ${listings.length} total, ${this.myListings().length} míos`);
+        this.errorMsg.set(null);
       },
       error: (err) => {
         console.error('❌ Error cargando alojamientos:', err);
+        this.errorMsg.set('No se pudieron cargar tus alojamientos.');
       }
     });
 
@@ -169,10 +172,12 @@ export class MyListingsComponent implements OnInit, OnDestroy {
         console.log(`✅ Reservas cargadas: ${bookings.length} total`);
         // Persistir en signal local para evitar interferencias de otras vistas
         this.hostBookings.set(bookings);
+        this.errorMsg.set(null);
       },
       error: (err) => {
         console.error('❌ Error cargando reservas:', err);
         this.hostBookings.set([]);
+        this.errorMsg.set('No se pudieron cargar tus reservas.');
       }
     });
 
@@ -217,12 +222,12 @@ export class MyListingsComponent implements OnInit, OnDestroy {
     // Recargar datos desde el servidor
     const sub1 = this.listingsSvc.fetchForHost(0, 12).subscribe({
       next: () => console.log('✅ Alojamientos refrescados'),
-      error: (err) => console.error('❌ Error refrescando alojamientos:', err)
+      error: (err) => { console.error('❌ Error refrescando alojamientos:', err); this.errorMsg.set('No se pudieron refrescar tus alojamientos.'); }
     });
 
     const sub2 = this.bookingsSvc.fetchForHost().subscribe({
       next: () => console.log('✅ Reservas refrescadas'),
-      error: (err) => console.error('❌ Error refrescando reservas:', err)
+      error: (err) => { console.error('❌ Error refrescando reservas:', err); this.errorMsg.set('No se pudieron refrescar tus reservas.'); }
     });
 
     this.subscriptions.push(sub1, sub2);
@@ -279,5 +284,10 @@ export class MyListingsComponent implements OnInit, OnDestroy {
     if (start && now < start) return false;
     if (end && now > end) return false;
     return true;
+  }
+  retry(): void {
+    if (this.loading()) return;
+    this.errorMsg.set(null);
+    this.refreshListings();
   }
 }

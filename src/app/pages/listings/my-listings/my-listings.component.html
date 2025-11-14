@@ -53,6 +53,10 @@
   </div>
 
   <div class="listings-section">
+    <div class="error-banner" *ngIf="errorMsg() && !loading()">
+      <span class="msg">{{ errorMsg() }}</span>
+      <button type="button" class="btn-refresh" (click)="retry()">Reintentar</button>
+    </div>
     <div class="section-header">
       <h2>Mis Alojamientos</h2>
       <div class="view-options">

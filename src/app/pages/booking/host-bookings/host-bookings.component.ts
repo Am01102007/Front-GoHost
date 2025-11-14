@@ -26,13 +26,17 @@ export class HostBookingsComponent implements OnInit {
 
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
   actionLoading: Record<string, boolean> = {};
+  errorMsg = signal<string | null>(null);
 
   ngOnInit() {
     // Asegurar datos de alojamientos y reservas del anfitrión
-    this.listings.fetchForHost().subscribe();
+    this.listings.fetchForHost().subscribe({
+      next: () => this.errorMsg.set(null),
+      error: () => this.errorMsg.set('No se pudieron cargar tus alojamientos')
+    });
     this.bookings.fetchForHost().subscribe({
-      next: (list) => this.hostBookings.set(list),
-      error: () => this.hostBookings.set([])
+      next: (list) => { this.hostBookings.set(list); this.errorMsg.set(null); },
+      error: () => { this.hostBookings.set([]); this.errorMsg.set('No se pudieron cargar tus reservas'); }
     });
   }
 
@@ -244,3 +248,8 @@ export class HostBookingsComponent implements OnInit {
     return thumbSizes();
   }
 }
+  retry() {
+    this.errorMsg.set(null);
+    this.listings.fetchForHost().subscribe();
+    this.bookings.fetchForHost().subscribe({ next: (list) => this.hostBookings.set(list) });
+  }

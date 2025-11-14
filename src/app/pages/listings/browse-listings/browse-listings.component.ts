@@ -57,6 +57,7 @@ export class BrowseListingsComponent implements OnInit {
    * Estado de carga del servicio
    */
   readonly loading = computed(() => this.listingsSvc.loading());
+  readonly errorMsg = signal<string | null>(null);
 
   /**
    * Verifica si hay filtros activos
@@ -155,9 +156,11 @@ export class BrowseListingsComponent implements OnInit {
     this.listingsSvc.fetchAll().subscribe({
       next: (listings) => {
         console.log(`✅ Alojamientos cargados: ${listings.length} disponibles`);
+        this.errorMsg.set(null);
       },
       error: (err) => {
         console.error('❌ Error cargando alojamientos:', err);
+        this.errorMsg.set('No se pudieron cargar los alojamientos.');
         this.notifications.error(
           'Error al cargar alojamientos', 
           'No se pudieron cargar los alojamientos disponibles.'
@@ -310,6 +313,7 @@ export class BrowseListingsComponent implements OnInit {
     this.listingsSvc.fetchAll(0, 12, true).subscribe({
       next: (listings) => {
         console.log(`✅ Datos refrescados: ${listings.length} alojamientos`);
+        this.errorMsg.set(null);
         this.notifications.success(
           'Datos actualizados', 
           `Se han cargado ${listings.length} alojamientos.`
@@ -317,11 +321,18 @@ export class BrowseListingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Error refrescando datos:', err);
+        this.errorMsg.set('No se pudieron actualizar los datos.');
         this.notifications.error(
           'Error al actualizar', 
           'No se pudieron actualizar los datos.'
         );
       }
     });
+  }
+
+  retry(): void {
+    if (this.loading()) return;
+    this.errorMsg.set(null);
+    this.refreshData();
   }
 }
