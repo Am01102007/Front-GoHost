@@ -90,7 +90,7 @@
     
     <div class="footer">
       <div class="price">
-        <span class="amount">{{ listing.precioPorNoche | currencyUser }}</span>
+        <span class="amount">{{ listing.precioPorNoche | currencyUser: listing.currencyCode }}</span>
         <span class="period">/ noche</span>
       </div>
       

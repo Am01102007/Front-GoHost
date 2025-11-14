@@ -33,6 +33,7 @@ export class EditListingComponent implements OnInit {
     ciudad: ['', Validators.required],
     pais: ['', Validators.required],
     precioPorNoche: [100, [Validators.required, Validators.min(1)]],
+    moneda: ['USD', Validators.required],
     capacidad: [1, [Validators.required, Validators.min(1)]]
   });
 
@@ -63,6 +64,7 @@ export class EditListingComponent implements OnInit {
       ciudad: l.ubicacion.ciudad,
       pais: l.ubicacion.pais,
       precioPorNoche: l.precioPorNoche,
+      moneda: l.currencyCode || 'USD',
       capacidad: l.capacidad
     });
     this.photoPreview = (l.imagenes && l.imagenes.length) ? l.imagenes[0] : null;
@@ -103,6 +105,7 @@ export class EditListingComponent implements OnInit {
       pais: v.pais!,
       calle: v.direccion!,
       precioNoche: v.precioPorNoche!,
+      moneda: v.moneda!,
       capacidad: v.capacidad!
     };
 

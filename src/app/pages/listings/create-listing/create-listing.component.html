@@ -37,8 +37,17 @@
     <h3>Detalles del alojamiento</h3>
     <div class="form-row">
       <label>
-        Precio por noche (USD) *
+        Precio por noche *
         <input type="number" formControlName="precioPorNoche" min="1" placeholder="100" [class.error]="form.get('precioPorNoche')?.invalid && form.get('precioPorNoche')?.touched"/>
+      </label>
+      <label>
+        Moneda
+        <select formControlName="moneda">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="COP">COP</option>
+          <option value="MXN">MXN</option>
+        </select>
       </label>
       
       <label>

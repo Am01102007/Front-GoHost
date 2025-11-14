@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="price-section">
-      <span class="price">{{ listing.precioPorNoche | currencyUser }}</span>
+      <span class="price">{{ listing.precioPorNoche | currencyUser: listing.currencyCode }}</span>
       <span class="period">por noche</span>
     </div>
   </div>
@@ -104,7 +104,7 @@
     <div class="booking-sidebar" *ngIf="!auth.isHost()">
       <div class="booking-card">
         <div class="booking-header">
-          <span class="booking-price">{{ listing.precioPorNoche | currencyUser }}</span>
+          <span class="booking-price">{{ listing.precioPorNoche | currencyUser: listing.currencyCode }}</span>
           <span class="booking-period">por noche</span>
         </div>
         

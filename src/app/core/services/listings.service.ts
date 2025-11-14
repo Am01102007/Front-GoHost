@@ -144,6 +144,7 @@ export class ListingsService {
         lng: dto.longitud ?? undefined
       },
       precioPorNoche: Number(dto.precioNoche ?? 0),
+      currencyCode: String(dto.moneda ?? dto.currencyCode ?? dto.currency ?? 'USD'),
       imagenes: imagenesNorm,
       servicios: Array.isArray(dto.servicios) ? dto.servicios.map((s: any) => String(s)) : [],
       anfitrionId: String(dto.anfitrionId ?? dto.anfitrion?.id ?? dto.hostId ?? ''),
@@ -446,6 +447,7 @@ export class ListingsService {
     calle: string;
     zip?: string;
     precioNoche: number;
+    moneda?: string;
     capacidad: number;
     fotos: File[]; // ⚠ Cambio: Ahora son archivos File, no URLs
     servicios?: string[];
@@ -504,6 +506,7 @@ export class ListingsService {
       calle: dto.calle,
       zip: dto.zip,
       precioNoche: dto.precioNoche,
+      moneda: dto.moneda,
       capacidad: dto.capacidad,
       servicios: normalizedServicios,
       anfitrionId: user?.id || undefined
@@ -583,6 +586,7 @@ export class ListingsService {
     calle: string;
     zip: string;
     precioNoche: number;
+    moneda: string;
     capacidad: number;
     servicios: string[];
     fotos: string[];

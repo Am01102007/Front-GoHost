@@ -8,7 +8,7 @@
     <label>Huéspedes<input type="number" formControlName="huespedes" /></label>
   </form>
 
-  <aside class="pago">
+  <aside class="pago" [formGroup]="form">
     <h3>Elige un método de pago</h3>
     <label>
       <select formControlName="metodoPago">

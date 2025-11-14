@@ -133,10 +133,15 @@ export class BookingsService {
     private dataSyncService: DataSyncService,
     private auth: AuthService
   ) {
-    // Suscribirse a cambios externos de reservas
+    // Suscribirse a cambios externos de reservas (según rol)
     this.dataSyncService.onDataChange('bookings').subscribe(() => {
       console.log('🔄 BookingsService: Recargando datos por cambio externo');
-      this.fetchMine(0, 10).subscribe();
+      const role = this.auth.currentUser()?.rol;
+      if (role === 'ANFITRION') {
+        this.fetchForHost(0, 10).subscribe();
+      } else {
+        this.fetchMine(0, 10).subscribe();
+      }
     });
   }
 
@@ -212,6 +217,14 @@ export class BookingsService {
 
   /** Listar reservas del huésped autenticado */
   fetchMine(page = 0, size = 10, filtros?: { fechaInicio?: string; fechaFin?: string; estado?: 'pendiente' | 'pagado' | 'cancelado' }): Observable<Booking[]> {
+    // Evitar 403 si el usuario es anfitrión
+    try {
+      const role = this.auth.currentUser()?.rol;
+      if (role === 'ANFITRION') {
+        this.bookings.set([]);
+        return of([]);
+      }
+    } catch {}
     // Evitar llamadas si no hay sesión/token para prevenir 401 innecesarios
     try {
       const hasToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('auth_token');
@@ -251,6 +264,14 @@ export class BookingsService {
    * Intenta usar endpoint dedicado; si no existe, devuelve [].
    */
   fetchForHost(page = 0, size = 10): Observable<Booking[]> {
+    // Evitar llamadas si no es anfitrión
+    try {
+      const role = this.auth.currentUser()?.rol;
+      if (role !== 'ANFITRION') {
+        this.bookings.set([]);
+        return of([]);
+      }
+    } catch {}
     // Similar a fetchMine: permitir que el backend derive el anfitrión desde el token.
     // No bloquear por falta de currentUser en memoria para evitar lista vacía en SSR/cargas iniciales.
     try {

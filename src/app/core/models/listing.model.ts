@@ -10,6 +10,7 @@ export interface Listing {
     lng?: number;
   };
   precioPorNoche: number;
+  currencyCode?: string;
   imagenes: string[];
   servicios: string[];
   calificacionPromedio?: number;

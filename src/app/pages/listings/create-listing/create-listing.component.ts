@@ -29,6 +29,7 @@ export class CreateListingComponent {
     ciudad: ['', Validators.required],
     pais: ['', Validators.required],
     precioPorNoche: [100, [Validators.required, Validators.min(1)]],
+    moneda: ['USD', Validators.required],
     capacidad: [1, [Validators.required, Validators.min(1)]],
     servicios: [[] as string[]]
   });
@@ -153,6 +154,7 @@ export class CreateListingComponent {
         pais: v.pais!,
         calle: v.direccion!,
         precioNoche: v.precioPorNoche!,
+        moneda: v.moneda!,
         capacidad: v.capacidad!,
         fotos: this.selectedFiles,
         servicios: (v.servicios || [])
