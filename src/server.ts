@@ -218,10 +218,12 @@ app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   const base = resolveApiTarget();
-  const apiBaseUrl = process.env['ENABLE_SSR_API_PROXY'] === 'true' ? '/api' : `${base}/api`;
+  const isProd = process.env['NODE_ENV'] === 'production';
+  const apiBaseUrl = isProd
+    ? `${base}/api`
+    : (process.env['ENABLE_SSR_API_PROXY'] === 'true' ? '/api' : `${base}/api`);
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = 'backend';
-  const isProd = process.env['NODE_ENV'] === 'production';
   const mailEnabled = isProd ? 'true' : (process.env['MAIL_ENABLED'] ?? 'false');
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
