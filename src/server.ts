@@ -5,6 +5,7 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
+import compression from 'compression';
 import { IncomingMessage } from 'node:http';
 import { join } from 'node:path';
 
@@ -22,6 +23,8 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 // Seguridad básica y compatibilidad de respuestas
 app.disable('x-powered-by');
+// Compresión de respuestas dinámicas para reducir TTFB y tamaño
+app.use(compression({ threshold: 1024 }));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -51,21 +54,56 @@ function resolveApiTarget(): string {
 }
 
 // Segundo destino de respaldo cuando el primario falla en desarrollo
-function resolveApiFallbackTarget(primary: string): string | null {
-  // Si ya es remoto, no tiene sentido intentar otro
-  if (/^https?:\/\//.test(primary) && !/localhost|127\.0\.0\.1/.test(primary)) {
-    return null;
+// Target activo seleccionado por salud
+let ACTIVE_API_BASE = resolveApiTarget();
+async function selectHealthyApiBase() {
+  const primary = resolveApiTarget();
+  const remote = 'https://backend-gohost-production.up.railway.app';
+  const candidates = [primary, remote];
+  for (const base of candidates) {
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 1500);
+      const r = await fetch(`${base}/health`, { method: 'GET', signal: ctrl.signal });
+      clearTimeout(to);
+      if (r.ok) {
+        ACTIVE_API_BASE = base;
+        return;
+      }
+    } catch {}
   }
-  // Apunta al backend remoto publicado en Railway
-  return 'https://backend-gohost-production.up.railway.app';
+  ACTIVE_API_BASE = primary;
+}
+void selectHealthyApiBase();
+setInterval(() => void selectHealthyApiBase(), 60_000);
+
+// Caché simple en memoria para GET públicos
+type CacheEntry = { ts: number; status: number; headers: [string, string][]; data: Buffer };
+const apiCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 15_000;
+
+function canCache(pathname: string, hasAuth: boolean) {
+  if (hasAuth) return false;
+  // Cachear listados y métricas públicas
+  return pathname.startsWith('/api/alojamientos');
+}
+
+async function timedFetch(url: string, init: RequestInit, timeoutMs = 8000) {
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    return res;
+  } finally {
+    clearTimeout(to);
+  }
 }
 
 /**
  * Proxy de API: reenvía las peticiones que comienzan con /api.
  */
 app.use('/api', async (req, res) => {
-  const API_TARGET = resolveApiTarget();
-  const API_FALLBACK = resolveApiFallbackTarget(API_TARGET);
+  const API_TARGET = ACTIVE_API_BASE;
 
   const method = req.method;
   const headers: Record<string, string> = {};
@@ -77,10 +115,13 @@ app.use('/api', async (req, res) => {
   delete headers['content-length'];
   delete headers['origin'];
   delete headers['referer'];
-  if (headers['authorization']) {
+  const hasAuthHeader = !!headers['authorization'];
+  if (hasAuthHeader) {
     const auth = headers['authorization'].trim();
     if (!auth || /^Bearer\s*(null|undefined)?$/i.test(auth)) {
       delete headers['authorization'];
+      
+      
     }
   }
 
@@ -116,52 +157,43 @@ app.use('/api', async (req, res) => {
   const doFetch = async (base: string, body?: Buffer) => {
     const targetUrl = `${base}${req.originalUrl}`;
     const bodyInit = body ? new Uint8Array(body) : undefined;
-    const response = await fetch(targetUrl, { method, headers, body: bodyInit as any });
+    const response = await timedFetch(targetUrl, { method, headers, body: bodyInit as any });
     return { response, targetUrl } as const;
   };
 
   try {
     const body = await ensureBody();
-    let { response } = await doFetch(API_TARGET, body);
-    if (response.status >= 500 && API_FALLBACK) {
-      console.warn(`[SSR] API primario ${API_TARGET} respondió ${response.status}. Intentando fallback...`);
-      ({ response } = await doFetch(API_FALLBACK, body));
+    // Cache rápido para GET públicos
+    const cacheKey = `${req.method}:${req.originalUrl}`;
+    const now = Date.now();
+    if (method === 'GET' && canCache(req.originalUrl, !!headers['authorization'])) {
+      const hit = apiCache.get(cacheKey);
+      if (hit && (now - hit.ts) < CACHE_TTL_MS) {
+        res.status(hit.status);
+        for (const [name, value] of hit.headers) res.setHeader(name, value);
+        res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
+        res.send(hit.data);
+        return;
+      }
     }
-    res.status(response.status);
+
+    const { response } = await doFetch(API_TARGET, body);
+    const status = response.status;
+    const headersOut: [string, string][] = [];
     response.headers.forEach((value, name) => {
       const lower = name.toLowerCase();
       if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
+      headersOut.push([name, value]);
       res.setHeader(name, value);
     });
-    const arrayBuf = await response.arrayBuffer();
-    res.send(Buffer.from(arrayBuf));
-  } catch (err: any) {
-    if (API_FALLBACK) {
-      try {
-        console.warn(`[SSR] API primario ${API_TARGET} falló (${err?.code || err?.message}). Intentando fallback...`);
-        const body = await ensureBody();
-        const { response } = await doFetch(API_FALLBACK, body);
-        res.status(response.status);
-        response.headers.forEach((value, name) => {
-          const lower = name.toLowerCase();
-          if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
-          res.setHeader(name, value);
-        });
-        const arrayBuf = await response.arrayBuffer();
-        res.send(Buffer.from(arrayBuf));
-        return;
-      } catch (err2: any) {
-        const detail = {
-          primary: API_TARGET,
-          fallback: API_FALLBACK,
-          message: err2?.message,
-          name: err2?.name,
-          code: err2?.code ?? err2?.cause?.code,
-          cause: err2?.cause?.message ?? String(err2?.cause ?? ''),
-        };
-        console.error('API proxy error (fallback):', detail);
-      }
+    const buf = Buffer.from(await response.arrayBuffer());
+    if (method === 'GET' && status === 200 && canCache(req.originalUrl, hasAuthHeader)) {
+      apiCache.set(cacheKey, { ts: now, status, headers: headersOut, data: buf });
+      res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
     }
+    res.status(status);
+    res.send(buf);
+  } catch (err: any) {
     res.status(502).json({ error: 'Bad Gateway', detail: err?.message ?? 'Proxy failed' });
   }
 });
@@ -185,10 +217,12 @@ app.use('/api', async (req, res) => {
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  const apiBaseUrl = '/api';
+  const base = resolveApiTarget();
+  const apiBaseUrl = process.env['ENABLE_SSR_API_PROXY'] === 'true' ? '/api' : `${base}/api`;
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = 'backend';
-  const mailEnabled = 'true';
+  const isProd = process.env['NODE_ENV'] === 'production';
+  const mailEnabled = isProd ? 'true' : (process.env['MAIL_ENABLED'] ?? 'false');
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
@@ -270,7 +304,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     if (error) {
       throw error;
     }
-    const target = resolveApiTarget();
+    const target = ACTIVE_API_BASE;
     console.log(`Node Express server listening on http://localhost:${port}`);
     console.log(`[SSR] API proxy target: ${target}`);
   });
