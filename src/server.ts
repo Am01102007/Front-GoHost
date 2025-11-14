@@ -115,7 +115,8 @@ app.use('/api', async (req, res) => {
 
   const doFetch = async (base: string, body?: Buffer) => {
     const targetUrl = `${base}${req.originalUrl}`;
-    const response = await fetch(targetUrl, { method, headers, body });
+    const bodyInit = body ? new Uint8Array(body) : undefined;
+    const response = await fetch(targetUrl, { method, headers, body: bodyInit as any });
     return { response, targetUrl } as const;
   };
 
