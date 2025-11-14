@@ -1,6 +1,6 @@
-# Despliegue en Railway (Frontend SSR + Proxy de API)
+# Despliegue en Railway (Frontend SSR + API directa al backend)
 
-Este documento describe cómo desplegar el frontend `AppAlojamiento` en Railway usando SSR de producción y cómo configurar el proxy `/api` para apuntar al backend.
+Este documento describe cómo desplegar el frontend `AppAlojamiento` en Railway usando SSR de producción y cómo configurar el acceso directo al backend. El proxy `/api` del SSR es opcional y debe usarse solo en desarrollo.
 
 ## Servicios y carpetas
 - **Frontend**: carpeta `AppAlojamiento/` (Angular SSR)
@@ -19,6 +19,7 @@ Este documento describe cómo desplegar el frontend `AppAlojamiento` en Railway 
   - Recomendado (referencia automática si ambos servicios están en el mismo proyecto):
     - `https://${{ backend.RAILWAY_PUBLIC_DOMAIN }}`
     - Ajusta `backend` al nombre real del servicio backend en Railway.
+- `ENABLE_SSR_API_PROXY`: opcional. Si `true`, habilita el proxy `/api` en el SSR. Por defecto no se registra en producción; el cliente llama directamente al backend.
 
 > Nota: El SSR tiene un fallback integrado. Si `API_TARGET` no está definido:
 > - En producción usa `https://backend-gohost-production.up.railway.app`.
@@ -39,15 +40,15 @@ Este documento describe cómo desplegar el frontend `AppAlojamiento` en Railway 
 
 ## Verificación
 - `https://<dominio-frontend>/env.js`
-  - Debe contener: `API_BASE_URL: 'https://<dominio-backend>'`.
-- `https://<dominio-frontend>/api/alojamientos?page=0&size=12`
+  - Debe contener: `API_BASE_URL: 'https://<dominio-backend>/api'`.
+- `https://<dominio-backend>/api/alojamientos?page=0&size=12`
   - Debe responder **200** con datos.
 - `https://<dominio-frontend>/reserva/123`
   - Debe renderizar correctamente vía SSR.
 
-## Proxy `/api` (cómo funciona)
-- Todas las peticiones que empiezan por `/api` se envían al `API_TARGET`.
-- El proxy ajusta cabeceras para evitar conflictos y elimina `Authorization` inválido (p.ej. `Bearer null`).
+## Proxy `/api` (opcional)
+- Si `ENABLE_SSR_API_PROXY=true`, las peticiones que empiezan por `/api` en el SSR se envían al `API_TARGET`.
+- Recomendación: en producción, que el cliente llame directo al backend público (`https://<dominio-backend>/api/...`) y mantener el proxy deshabilitado.
 
 ## Errores comunes y soluciones
 - **503: Service Unavailable – "API target no configurado"**
@@ -65,6 +66,7 @@ Este documento describe cómo desplegar el frontend `AppAlojamiento` en Railway 
 ## Cambios relevantes en el código
 - `src/server.ts`:
   - `resolveApiTarget()` obtiene `API_TARGET` de entorno, con fallback a Railway/localhost.
-  - `/env.js` expone `window.__ENV__.API_BASE_URL` con el mismo valor.
+  - `/env.js` expone `window.__ENV__.API_BASE_URL` siempre con sufijo `/api`.
+  - Proxy `/api` solo se registra si `ENABLE_SSR_API_PROXY=true`.
   - Logs informan el target del proxy en arranque.
 

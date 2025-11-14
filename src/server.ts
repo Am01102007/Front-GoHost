@@ -49,12 +49,13 @@ function resolveApiFallbackTarget(primary: string): string | null {
 }
 
 /**
- * Proxy de API: reenvía todas las peticiones que comienzan con /api.
- * En desarrollo, se envía al backend en http://localhost:8081
- * para evitar 502 cuando el backend no está disponible.
- * Debe estar registrado ANTES de los handlers de estáticos y SSR.
+ * Proxy de API (opcional): reenvía las peticiones que comienzan con /api.
+ * Habilitar sólo si `ENABLE_SSR_API_PROXY=true` en entorno.
+ * En desarrollo, apunta a localhost; en prod, se recomienda que el cliente
+ * llame directo al backend público y no depender de este proxy.
  */
-app.use('/api', (req, res) => {
+if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
+  app.use('/api', (req, res) => {
   // Resuelve el destino vía variable de entorno, con fallback sensible.
   const API_TARGET = resolveApiTarget();
   const API_FALLBACK = resolveApiFallbackTarget(API_TARGET);
@@ -188,7 +189,8 @@ app.get('/env.js', (req, res) => {
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
-});
+  });
+}
 
 /**
  * Endpoint de envío de correo vía SSR usando Nodemailer (Elastic Email)
