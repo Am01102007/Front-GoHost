@@ -188,9 +188,11 @@ app.get('/env.js', (req, res) => {
   const apiBaseUrl = '/api';
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
+  const mailEnabled = (process.env['MAIL_ENABLED'] ?? 'true');
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
+    MAIL_ENABLED: mailEnabled,
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);

@@ -4,7 +4,7 @@ import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { map, tap, catchError, finalize, timeout } from 'rxjs/operators';
 import { User } from '../models/user.model';
 import { EmailService } from './email.service';
-import { EFFECTIVE_MAIL_PROVIDER } from '../../shared/email.config';
+import { EFFECTIVE_MAIL_PROVIDER, MAIL_ENABLED } from '../../shared/email.config';
 import { NotificationsService } from './notifications.service';
 import { DataSyncService } from './data-sync.service';
 import { API_BASE } from '../config';
@@ -471,15 +471,15 @@ export class AuthService {
         // Correo de bienvenida vía backend SSR
         try {
           const provider = EFFECTIVE_MAIL_PROVIDER || 'backend';
-          console.log(`MAIL_PROVIDER=${provider}`);
-          if (provider === 'ssrsmtp' && user?.email) {
+          const enabled = MAIL_ENABLED;
+          console.log(`MAIL_PROVIDER=${provider} | MAIL_ENABLED=${enabled}`);
+          if (!enabled && provider === 'ssrsmtp' && user?.email) {
             this.emailService
               .sendWelcome({ to_email: user.email, to_name: user.nombre })
               .then(() => { try { this.notifications.success('Correo de bienvenida enviado'); } catch {} })
               .catch(() => { try { this.notifications.error('No se pudo enviar el correo de bienvenida'); } catch {} });
-          }
-          if (provider === 'backend') {
-            console.log('El backend enviará el correo de bienvenida tras el 201 de registro');
+          } else {
+            console.log('El backend gestiona el envío de bienvenida (sin duplicar)');
           }
         } catch {}
       }),
