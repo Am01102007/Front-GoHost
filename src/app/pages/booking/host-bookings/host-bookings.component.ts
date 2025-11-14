@@ -28,16 +28,18 @@ export class HostBookingsComponent implements OnInit {
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
   actionLoading: Record<string, boolean> = {};
   errorMsg = signal<string | null>(null);
+  loading: boolean = false;
 
   ngOnInit() {
     // Asegurar datos de alojamientos y reservas del anfitrión
+    this.loading = true;
     this.listings.fetchForHost().subscribe({
       next: () => this.errorMsg.set(null),
       error: () => this.errorMsg.set('No se pudieron cargar tus alojamientos')
     });
     this.bookings.fetchForHost().subscribe({
-      next: (list) => { this.hostBookings.set(list); this.errorMsg.set(null); },
-      error: () => { this.hostBookings.set([]); this.errorMsg.set('No se pudieron cargar tus reservas'); }
+      next: (list) => { this.hostBookings.set(list); this.errorMsg.set(null); this.loading = false; },
+      error: () => { this.hostBookings.set([]); this.errorMsg.set('No se pudieron cargar tus reservas'); this.loading = false; }
     });
   }
 
@@ -250,9 +252,11 @@ export class HostBookingsComponent implements OnInit {
   thumbSize(): string {
     return thumbSizes();
   }
-}
+  
   retry() {
     this.errorMsg.set(null);
+    this.loading = true;
     this.listings.fetchForHost().subscribe();
-    this.bookings.fetchForHost().subscribe({ next: (list) => this.hostBookings.set(list) });
+    this.bookings.fetchForHost().subscribe({ next: (list: Booking[]) => { this.hostBookings.set(list); this.loading = false; }, error: () => { this.loading = false; } });
   }
+}

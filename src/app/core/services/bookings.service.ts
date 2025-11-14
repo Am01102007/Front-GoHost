@@ -202,7 +202,7 @@ export class BookingsService {
       numeroHuespedes: payload.numeroHuespedes
     }).pipe(
       map(dto => this.toBooking(dto)),
-      tap(b => this.bookings.set([b, ...this.bookings()])),
+      tap(b => { this.bookings.set([b, ...this.bookings()]); this.dataSyncService.invalidateCache('bookings'); }),
       catchError(err => {
         console.error('BookingsService.create error', err);
         return throwError(() => err);
@@ -322,7 +322,7 @@ export class BookingsService {
     const url = `${this.API_BASE}/reservas/${id}`;
     return this.http.patch<any>(url, { estado: backendEstado }).pipe(
       map(dto => this.toBooking(dto)),
-      tap(updated => this.bookings.set(this.bookings().map(b => b.id === id ? updated : b))),
+      tap(updated => { this.bookings.set(this.bookings().map(b => b.id === id ? updated : b)); this.dataSyncService.invalidateCache('bookings'); }),
       catchError(err => {
         console.error('BookingsService.updateStatus error', err);
         return throwError(() => err);
@@ -333,7 +333,7 @@ export class BookingsService {
   cancelar(id: string): Observable<void> {
     const url = `${this.API_BASE}/reservas/${id}/cancelar`;
     return this.http.post<void>(url, {}).pipe(
-      tap(() => this.bookings.set(this.bookings().map(b => b.id === id ? { ...b, estado: 'cancelado' } : b))),
+      tap(() => { this.bookings.set(this.bookings().map(b => b.id === id ? { ...b, estado: 'cancelado' } : b)); this.dataSyncService.invalidateCache('bookings'); }),
       catchError(err => {
         console.error('BookingsService.cancelar error', err);
         return throwError(() => err);

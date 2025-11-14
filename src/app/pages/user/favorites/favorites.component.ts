@@ -21,7 +21,7 @@ export class FavoritesComponent {
 
   ngOnInit() {
     this.loading = true;
-    this.listingsSvc.refreshListings().subscribe({
+    this.listingsSvc.fetchAll(0, 12, true).subscribe({
       next: () => { this.loading = false; },
       error: () => { this.loading = false; }
     });

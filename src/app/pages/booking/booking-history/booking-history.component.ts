@@ -19,7 +19,8 @@ export class BookingHistoryComponent implements OnInit {
   router = inject(Router);
 
   filter: 'todas' | 'completadas' | 'proximas' = 'todas';
-
+  loading: boolean = false;
+  
   ngOnInit() {
     this.loading = true;
     this.bookingsSvc.fetchMine().subscribe({
@@ -88,4 +89,3 @@ export class BookingHistoryComponent implements OnInit {
     this.router.navigate(['/alojamientos', listingId], { queryParams: { openComments: 'true' } });
   }
 }
-  loading = false;

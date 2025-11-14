@@ -656,6 +656,7 @@ export class ListingsService {
         
         // Notificar actualización exitosa
         this.dataSyncService.notifyDataChange('listings', 'update', updated, id, 'update');
+        this.dataSyncService.invalidateCache('listings');
         console.log(`✅ ListingsService: Alojamiento ${id} actualizado exitosamente`);
       }),
       catchError(err => {
@@ -713,6 +714,7 @@ export class ListingsService {
       tap(() => {
         console.log(`✅ Alojamiento ${id} eliminado exitosamente del backend`);
         console.log(`📡 Endpoint llamado: DELETE ${url}`);
+        this.dataSyncService.invalidateCache('listings');
         
         // Forzar una actualización adicional para asegurar sincronización
         setTimeout(() => {
