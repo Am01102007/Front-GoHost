@@ -151,7 +151,7 @@
     <div class="loading-state" *ngIf="loading()">
       <div class="loading-spinner"></div>
       <p>Cargando alojamientos...</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" style="margin-top:16px;">
+      <div class="grid-auto-fit gap-6" style="margin-top:16px;">
         <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6,7,8]">
           <div class="skeleton-image"></div>
           <div class="skeleton-lines">
@@ -174,7 +174,7 @@
       </div>
 
       <!-- Results grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" *ngIf="filtradas().length > 0">
+      <div class="grid-auto-fit gap-6" *ngIf="filtradas().length > 0">
         <app-accommodation-card *ngFor="let l of filtradas()" [listing]="l" />
       </div>
 
