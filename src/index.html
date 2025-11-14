@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="dns-prefetch" href="https://res.cloudinary.com">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+  <!-- Cargar env.js ANTES de los bundles de Angular para inyectar API_BASE_URL -->
+  <script src="/env.js"></script>
 </head>
 <body>
   <app-root></app-root>
-  <!-- Carga mínima /env.js (API_BASE_URL y MAIL_PROVIDER); SSR gestiona correo -->
-  <script src="/env.js"></script>
   <!-- Eliminado SMTP.js: el envío ahora es seguro vía SSR/Nodemailer -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
   <script>

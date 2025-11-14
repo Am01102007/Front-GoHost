@@ -7,7 +7,7 @@
     "start:dev": "ng serve --proxy-config proxy.conf.json",
     "start:dev:remote": "ng serve --proxy-config proxy.remote.conf.json",
     "start:no-proxy": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "start:prod": "npm run build && npm run serve:ssr:AppAlojamientoTmp",
     "serve:ssr:AppAlojamientoTmp": "node dist/AppAlojamientoTmp/server/server.mjs",
