@@ -1,6 +1,6 @@
 <section class="messages">
   <h1>Mis Mensajes</h1>
-  <div class="list" *ngIf="!loading; else skeletonMsgs">
+  <div class="list" *ngIf="!loading && !invalidReserva; else skeletonMsgs" style="max-height: 60vh; overflow: auto;">
     <article class="msg" *ngFor="let m of items">
       <div class="meta">
         <strong>{{ m.from }}</strong>
@@ -8,8 +8,13 @@
       </div>
       <p class="text">{{ m.text }}</p>
     </article>
+    <div class="pager" style="display:flex; gap:8px; margin:8px 0;">
+      <button class="btn" type="button" (click)="loadPage(page - 1)" [disabled]="page <= 0">Anterior</button>
+      <button class="btn" type="button" (click)="loadPage(page + 1)">Siguiente</button>
+    </div>
   </div>
   <ng-template #skeletonMsgs>
+    <div *ngIf="invalidReserva" class="info-banner">Abre los mensajes desde una reserva específica.</div>
     <div class="skeleton-msg"></div>
     <div class="skeleton-msg"></div>
     <div class="skeleton-msg"></div>

@@ -51,7 +51,6 @@ export const routes: Routes = [
 
   // Rutas comunes para usuarios autenticados
   { path: 'perfil', component: EditProfileComponent, canActivate: [authGuard] },
-  { path: 'mis-mensajes', component: MyMessagesComponent, canActivate: [authGuard] },
   { path: 'metodos-de-pago', loadComponent: () => import('./pages/payments/payment-methods/payment-methods.component').then(m => m.PaymentMethodsComponent), canActivate: [authGuard] },
 
   // Rutas específicas para huéspedes
