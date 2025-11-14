@@ -9,8 +9,12 @@
       <div class="datos">
         <h3>{{ r.listing?.titulo || 'Nombre reserva' }}</h3>
         <div class="acciones">
-          <button class="btn aceptar" (click)="aceptar(r.id)">Aceptar</button>
-          <button class="btn rechazar" (click)="rechazar(r.id)">Rechazar</button>
+          <button class="btn aceptar" (click)="aceptar(r.id)" [disabled]="actionLoading[r.id]" [attr.aria-busy]="actionLoading[r.id]">
+            {{ actionLoading[r.id] ? 'Procesando...' : 'Aceptar' }}
+          </button>
+          <button class="btn rechazar" (click)="rechazar(r.id)" [disabled]="actionLoading[r.id]">
+            {{ actionLoading[r.id] ? 'Procesando...' : 'Rechazar' }}
+          </button>
         </div>
       </div>
       <div class="detalles">
@@ -24,4 +28,3 @@
     <p class="empty">No hay solicitudes pendientes.</p>
   </ng-template>
 </section>
-

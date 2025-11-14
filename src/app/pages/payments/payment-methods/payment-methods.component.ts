@@ -13,6 +13,8 @@ import { PaymentMethodsService, PaymentMethod } from '../../../core/services/pay
 export class PaymentMethodsComponent {
   fb = inject(FormBuilder);
   pm = inject(PaymentMethodsService);
+  saving = false;
+  actionLoading: Record<string, boolean> = {};
 
   form = this.fb.group({
     tipo: ['tarjeta', Validators.required],
@@ -27,6 +29,7 @@ export class PaymentMethodsComponent {
 
   add() {
     if (this.form.invalid) return;
+    this.saving = true;
     const v = this.form.value;
     const id = Math.random().toString(36).slice(2, 9);
     this.pm.add({
@@ -39,8 +42,9 @@ export class PaymentMethodsComponent {
       createdAt: new Date().toISOString()
     });
     this.form.reset({ tipo: 'tarjeta', brand: 'Visa' });
+    this.saving = false;
   }
 
-  remove(id: string) { this.pm.remove(id); }
-  setDefault(id: string) { this.pm.setDefault(id); }
+  remove(id: string) { this.actionLoading[id] = true; this.pm.remove(id); this.actionLoading[id] = false; }
+  setDefault(id: string) { this.actionLoading[id] = true; this.pm.setDefault(id); this.actionLoading[id] = false; }
 }

@@ -124,7 +124,7 @@
     <button 
       type="submit" 
       class="btn btn-primary" 
-      [disabled]="form.invalid || !hasMinimumImages || uploading"
+      [disabled]="form.invalid || !hasMinimumImages || uploading" [attr.aria-busy]="uploading"
     >
       <span *ngIf="!uploading">Crear alojamiento</span>
       <span *ngIf="uploading">Subiendo imágenes y creando...</span>

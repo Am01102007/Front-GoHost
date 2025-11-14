@@ -26,6 +26,7 @@ export class BookingDetailComponent implements OnInit {
   private auth = inject(AuthService);
 
   booking = signal<Booking | null>(null);
+  actionLoading = signal<boolean>(false);
 
   listing = computed(() => {
     const b = this.booking();
@@ -57,6 +58,7 @@ export class BookingDetailComponent implements OnInit {
   aceptar(): void {
     const b = this.booking();
     if (!b) return;
+    this.actionLoading.set(true);
     this.bookingsSvc.updateStatus(b.id, 'pagado').subscribe({
       next: (updated) => {
         this.booking.set(updated);
@@ -89,13 +91,15 @@ export class BookingDetailComponent implements OnInit {
           }
         } catch {}
       },
-      error: () => this.notifications.error('Error al aceptar la reserva')
+      error: (e) => this.notifications.error('Error al aceptar la reserva'),
+      complete: () => this.actionLoading.set(false)
     });
   }
 
   rechazar(): void {
     const b = this.booking();
     if (!b) return;
+    this.actionLoading.set(true);
     this.bookingsSvc.updateStatus(b.id, 'cancelado').subscribe({
       next: (updated) => {
         this.booking.set(updated);
@@ -128,13 +132,15 @@ export class BookingDetailComponent implements OnInit {
           }
         } catch {}
       },
-      error: () => this.notifications.error('Error al rechazar la reserva')
+      error: () => this.notifications.error('Error al rechazar la reserva'),
+      complete: () => this.actionLoading.set(false)
     });
   }
 
   cancelar(): void {
     const b = this.booking();
     if (!b) return;
+    this.actionLoading.set(true);
     this.bookingsSvc.cancelar(b.id).subscribe({
       next: () => {
         this.booking.set({ ...(b as any), estado: 'cancelado' });
@@ -167,13 +173,15 @@ export class BookingDetailComponent implements OnInit {
           }
         } catch {}
       },
-      error: () => this.notifications.error('Error al cancelar la reserva')
+      error: () => this.notifications.error('Error al cancelar la reserva'),
+      complete: () => this.actionLoading.set(false)
     });
   }
 
   marcarPagado(): void {
     const b = this.booking();
     if (!b) return;
+    this.actionLoading.set(true);
     this.bookingsSvc.pagar(b.id).subscribe({
       next: (updated) => {
         this.booking.set(updated);
@@ -207,7 +215,8 @@ export class BookingDetailComponent implements OnInit {
           }
         } catch {}
       },
-      error: () => this.notifications.error('Error al marcar como pagada')
+      error: () => this.notifications.error('Error al marcar como pagada'),
+      complete: () => this.actionLoading.set(false)
     });
   }
 

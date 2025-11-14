@@ -37,7 +37,7 @@
         <input type="password" formControlName="passwordNueva" placeholder="Contraseña Nueva"/>
       </label>
     </div>
-    <button type="button" class="btn ghost" (click)="cambiarContrasena()" [disabled]="saving">
+    <button type="button" class="btn ghost" (click)="cambiarContrasena()" [disabled]="saving" [attr.aria-busy]="saving">
       {{ saving ? 'Cambiando...' : 'Cambiar contraseña' }}
     </button>
   </section>

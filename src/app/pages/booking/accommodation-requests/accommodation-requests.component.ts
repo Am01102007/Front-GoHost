@@ -20,6 +20,7 @@ export class AccommodationRequestsComponent {
   auth = inject(AuthService);
   notifications = inject(NotificationsService);
   email = inject(EmailService);
+  actionLoading: Record<string, boolean> = {};
 
   get solicitudes() {
     const uid = this.auth.currentUser()?.id;
@@ -33,6 +34,7 @@ export class AccommodationRequestsComponent {
   }
 
   aceptar(id: string) {
+    this.actionLoading[id] = true;
     this.bookings.updateStatus(id, 'pagado').subscribe({
       next: () => {
         this.notifications.success('Solicitud aceptada', 'La reserva fue confirmada');
@@ -64,11 +66,14 @@ export class AccommodationRequestsComponent {
             });
           }
         } catch {}
-      }
+      },
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
   }
 
   rechazar(id: string) {
+    this.actionLoading[id] = true;
     this.bookings.updateStatus(id, 'cancelado').subscribe({
       next: () => {
         this.notifications.success('Solicitud rechazada', 'La reserva fue cancelada');
@@ -100,7 +105,9 @@ export class AccommodationRequestsComponent {
             });
           }
         } catch {}
-      }
+      },
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
   }
 }

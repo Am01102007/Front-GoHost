@@ -1,15 +1,17 @@
-.perfil-grid{display:grid;grid-template-columns:2fr 2fr 1fr;gap:24px;align-items:start}
-.bloque{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
-.bloque h3{margin:0 0 8px}
-.campos{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.campos label{display:grid;gap:6px}
-input,textarea{border:1px solid #d1d5db;border-radius:10px;padding:10px}
-.foto{display:grid;gap:10px;justify-items:center}
-.avatar img{width:180px;height:180px;opacity:.9}
-.guardar-row{grid-column:1/-1;margin-top:8px}
-.ancho{width:100%;border-radius:12px}
-.file{display:inline-grid;gap:6px;align-items:center}
+.perfil-grid{display:grid;grid-template-columns:1.8fr 1.2fr 1fr;gap:24px;align-items:start;padding:8px}
+.bloque{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.04)}
+.bloque h3{margin:0 0 10px;font-size:18px;color:#111827}
+.campos{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.campos label{display:grid;gap:6px;font-size:14px;color:#374151}
+input,textarea{border:1px solid #d1d5db;border-radius:12px;padding:12px;transition:border-color .2s ease,box-shadow .2s ease}
+input:focus,textarea:focus{outline:none;border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.15)}
+.foto{display:grid;gap:12px;justify-items:center}
+.avatar img{width:200px;height:200px;border-radius:50%;object-fit:cover;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.guardar-row{grid-column:1/-1;margin-top:12px}
+.ancho{width:100%;border-radius:12px;background:#8b5cf6;color:#fff;padding:12px;font-weight:600}
+.ancho[disabled]{opacity:.7}
+.file{display:inline-grid;gap:8px;align-items:center}
 .file input{display:none}
-.file span{display:inline-block;border:2px dashed #d1d5db;border-radius:10px;padding:10px;color:#6b7280}
-.lista-archivos{margin-top:8px;color:#6b7280}
-.hint{color:#6b7280}
+.file span{display:inline-block;border:2px dashed #c4b5fd;border-radius:12px;padding:12px;color:#6b7280;background:#fafafc}
+.lista-archivos{margin-top:10px;color:#6b7280}
+.hint{color:#6b7280;font-size:12px}

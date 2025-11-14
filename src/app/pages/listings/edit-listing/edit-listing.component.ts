@@ -92,6 +92,7 @@ export class EditListingComponent implements OnInit {
 
   guardar() {
     if (this.form.invalid || !this.listingId) return;
+    this.uploading = true;
     const v = this.form.value;
     const payloadBase: any = {
       titulo: v.titulo!,
@@ -111,19 +112,19 @@ export class EditListingComponent implements OnInit {
           this.notifications.success('Alojamiento actualizado', 'Los cambios fueron guardados correctamente');
           this.router.navigate(['/mis-alojamientos']);
         },
-        error: (err) => this.notifications.httpError?.(err)
+        error: (err) => this.notifications.httpError?.(err),
+        complete: () => { this.uploading = false; }
       });
     };
 
     if (this.selectedFile) {
-      this.uploading = true;
       this.uploadImage(this.selectedFile).subscribe({
         next: (url) => { this.uploading = false; doUpdate(url || undefined); },
         error: () => { this.uploading = false; doUpdate(undefined); }
       });
     } else {
       doUpdate(undefined);
+      this.uploading = false;
     }
   }
 }
-

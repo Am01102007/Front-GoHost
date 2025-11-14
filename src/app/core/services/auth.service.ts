@@ -730,6 +730,10 @@ export class AuthService {
         map(handle),
         tap(userUpdated => {
           const merged = { ...user, ...userUpdated };
+          if (merged.avatarUrl) {
+            const sep = merged.avatarUrl.includes('?') ? '&' : '?';
+            merged.avatarUrl = `${merged.avatarUrl}${sep}t=${Date.now()}`;
+          }
           this.currentUser.set(merged);
           this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
           console.log('✅ Perfil de usuario actualizado (con foto)');
@@ -768,15 +772,6 @@ export class AuthService {
           const mail = merged?.email;
           if (mail) this.emailService.sendProfileUpdated({ to_email: mail, to_name: merged?.nombre });
         } catch {}
-      }),
-      tap(() => {
-        this.loadProfile().subscribe({
-          next: (u) => {
-            this.currentUser.set(u);
-            this.dataSyncService.notifyDataChange('users', 'update', u, u.id, 'loadProfile-sync');
-          },
-          error: () => {}
-        });
       }),
       finalize(() => this.loading.set(false))
     );

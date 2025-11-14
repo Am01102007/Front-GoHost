@@ -52,8 +52,12 @@
         <div class="right">
           <a [routerLink]="['/alojamientos', b.listingId]" class="btn">Ver alojamiento</a>
           <a [routerLink]="['/reserva', b.id]" class="btn">Ver detalle</a>
-          <button class="btn success" *ngIf="b.estado === 'pendiente'" (click)="aceptar(b.id)">Aceptar</button>
-          <button class="btn danger" *ngIf="b.estado === 'pendiente'" (click)="rechazar(b.id)">Rechazar</button>
+          <button class="btn success" *ngIf="b.estado === 'pendiente'" (click)="aceptar(b.id)" [disabled]="actionLoading[b.id]" [attr.aria-busy]="actionLoading[b.id]">
+            {{ actionLoading[b.id] ? 'Procesando...' : 'Aceptar' }}
+          </button>
+          <button class="btn danger" *ngIf="b.estado === 'pendiente'" (click)="rechazar(b.id)" [disabled]="actionLoading[b.id]">
+            {{ actionLoading[b.id] ? 'Procesando...' : 'Rechazar' }}
+          </button>
         </div>
       </div>
     </div>

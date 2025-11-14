@@ -10,8 +10,12 @@
             <span class="muted">{{ m.tipo }} · {{ m.brand }} {{ m.last4 ? ('•••• ' + m.last4) : '' }}</span>
           </div>
           <div class="acciones">
-            <button class="btn ghost" (click)="setDefault(m.id)" [disabled]="m.default">Predeterminar</button>
-            <button class="btn danger" (click)="remove(m.id)">Eliminar</button>
+            <button class="btn ghost" (click)="setDefault(m.id)" [disabled]="m.default || actionLoading[m.id]" [attr.aria-busy]="actionLoading[m.id]">
+              {{ actionLoading[m.id] ? 'Procesando...' : 'Predeterminar' }}
+            </button>
+            <button class="btn danger" (click)="remove(m.id)" [disabled]="actionLoading[m.id]">
+              {{ actionLoading[m.id] ? 'Procesando...' : 'Eliminar' }}
+            </button>
           </div>
           <span class="badge" *ngIf="m.default">Predeterminado</span>
         </article>
@@ -34,7 +38,9 @@
         <label>Etiqueta<input formControlName="etiqueta" placeholder="p.ej. Visa Personal"/></label>
         <label>Marca<input formControlName="brand" placeholder="Visa/Mastercard"/></label>
         <label>Últimos 4<input formControlName="last4" maxlength="4"/></label>
-        <button type="submit" class="btn primary" [disabled]="form.invalid">Guardar</button>
+        <button type="submit" class="btn primary" [disabled]="form.invalid || saving" [attr.aria-busy]="saving">
+          {{ saving ? 'Guardando...' : 'Guardar' }}
+        </button>
       </form>
     </aside>
   </div>

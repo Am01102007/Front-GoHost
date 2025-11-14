@@ -29,10 +29,18 @@
     </div>
 
     <div class="actions">
-      <button class="btn success" *ngIf="booking()?.estado==='pendiente'" (click)="aceptar()">Aceptar</button>
-      <button class="btn danger" *ngIf="booking()?.estado==='pendiente'" (click)="rechazar()">Rechazar</button>
-      <button class="btn" *ngIf="booking()?.estado==='pendiente'" (click)="marcarPagado()">Marcar como pagada</button>
-      <button class="btn danger" *ngIf="booking()?.estado!=='cancelado'" (click)="cancelar()">Cancelar</button>
+      <button class="btn success" *ngIf="booking()?.estado==='pendiente'" (click)="aceptar()" [disabled]="actionLoading()" [attr.aria-busy]="actionLoading()">
+        {{ actionLoading() ? 'Procesando...' : 'Aceptar' }}
+      </button>
+      <button class="btn danger" *ngIf="booking()?.estado==='pendiente'" (click)="rechazar()" [disabled]="actionLoading()">
+        {{ actionLoading() ? 'Procesando...' : 'Rechazar' }}
+      </button>
+      <button class="btn" *ngIf="booking()?.estado==='pendiente'" (click)="marcarPagado()" [disabled]="actionLoading()">
+        {{ actionLoading() ? 'Procesando...' : 'Marcar como pagada' }}
+      </button>
+      <button class="btn danger" *ngIf="booking()?.estado!=='cancelado'" (click)="cancelar()" [disabled]="actionLoading()">
+        {{ actionLoading() ? 'Procesando...' : 'Cancelar' }}
+      </button>
     </div>
   </div>
 </section>

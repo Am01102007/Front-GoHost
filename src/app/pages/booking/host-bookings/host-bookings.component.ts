@@ -25,6 +25,7 @@ export class HostBookingsComponent implements OnInit {
   private readonly hostBookings = signal<Booking[]>([]);
 
   tab: 'todas' | 'pendientes' | 'activas' | 'canceladas' = 'todas';
+  actionLoading: Record<string, boolean> = {};
 
   ngOnInit() {
     // Asegurar datos de alojamientos y reservas del anfitrión
@@ -73,6 +74,7 @@ export class HostBookingsComponent implements OnInit {
   }
 
   aceptar(id: string) {
+    this.actionLoading[id] = true;
     this.bookings.updateStatus(id, 'pagado').subscribe({
       next: () => {
         this.notifications.success('Reserva confirmada', 'La reserva fue confirmada correctamente');
@@ -105,11 +107,14 @@ export class HostBookingsComponent implements OnInit {
             });
           }
         } catch {}
-      }
+      },
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
   }
 
   rechazar(id: string) {
+    this.actionLoading[id] = true;
     this.bookings.updateStatus(id, 'cancelado').subscribe({
       next: () => {
         this.notifications.success('Reserva cancelada', 'La reserva fue cancelada correctamente');
@@ -142,7 +147,9 @@ export class HostBookingsComponent implements OnInit {
             });
           }
         } catch {}
-      }
+      },
+      error: (err) => this.notifications.httpError(err),
+      complete: () => { this.actionLoading[id] = false; }
     });
   }
 
