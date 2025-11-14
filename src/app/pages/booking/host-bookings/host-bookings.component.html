@@ -61,5 +61,20 @@
         </div>
       </div>
     </div>
+    <div class="list" *ngIf="items.length === 0 && loading">
+      <div class="booking" *ngFor="let i of [1,2,3,4]">
+        <div class="left">
+          <div class="thumb"><div class="skeleton-thumb"></div></div>
+          <div class="info">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="skeleton-btn"></div>
+          <div class="skeleton-btn"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>

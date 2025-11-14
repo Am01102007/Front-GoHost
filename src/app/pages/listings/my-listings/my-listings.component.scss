@@ -263,6 +263,13 @@
   gap: 24px;
 }
 
+.skeleton-card{border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow-sm)}
+.skeleton-image{height:160px;background:linear-gradient(90deg,#eee,#f5f5f5,#eee);background-size:200% 100%;animation:skeleton 1.2s infinite}
+.skeleton-lines{padding:12px}
+.skeleton-lines .line{height:12px;background:linear-gradient(90deg,#eee,#f5f5f5,#eee);background-size:200% 100%;animation:skeleton 1.2s infinite;border-radius:8px;margin-bottom:8px}
+.skeleton-lines .line.short{width:60%}
+@keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
 .listings-grid.list-view {
   grid-template-columns: 1fr;
   gap: 16px;
