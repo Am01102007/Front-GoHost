@@ -384,6 +384,12 @@ export class AuthService {
     apellido: string;
     telefono?: string;
     rol?: 'HUESPED' | 'ANFITRION';
+    // Campos adicionales del formulario (si el backend los requiere)
+    ciudad?: string;
+    pais?: string;
+    fechaNacimiento?: string;
+    tipoDocumento?: string;
+    numeroDocumento?: string;
   }): Observable<User> {
     console.log('📝 AuthService: Registrando nuevo usuario:', userData.email);
     this.loading.set(true);

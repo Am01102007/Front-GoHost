@@ -34,7 +34,11 @@ export class RegisterComponent {
   });
 
   register() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      try { this.notify.error('Completa todos los campos requeridos'); } catch {}
+      try { this.form.markAllAsTouched(); } catch {}
+      return;
+    }
     const v = this.form.value;
     this.auth.register({
       nombre: v.nombre!,
@@ -42,7 +46,12 @@ export class RegisterComponent {
       email: v.email!,
       password: v.password!,
       telefono: v.telefono!,
-      rol: (v.rol === 'anfitrion' ? 'ANFITRION' : 'HUESPED') as 'ANFITRION' | 'HUESPED'
+      rol: (v.rol === 'anfitrion' ? 'ANFITRION' : 'HUESPED') as 'ANFITRION' | 'HUESPED',
+      ciudad: v.ciudad!,
+      pais: v.pais!,
+      fechaNacimiento: v.fechaNacimiento!,
+      tipoDocumento: v.tipoDocumento!,
+      numeroDocumento: v.numeroDocumento!
     })
       .subscribe({
         next: () => {
