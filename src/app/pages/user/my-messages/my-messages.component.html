@@ -1,12 +1,13 @@
 <section class="messages">
   <h1>Mis Mensajes</h1>
-  <div class="list" *ngIf="!loading && !invalidReserva; else skeletonMsgs" style="max-height: 60vh; overflow: auto;">
-    <article class="msg" *ngFor="let m of items">
+  <div #listEl class="list" *ngIf="!loading && !invalidReserva; else skeletonMsgs">
+    <button class="btn small" type="button" (click)="loadMore()" [disabled]="!hasMore">{{ hasMore ? 'Cargar mensajes anteriores' : 'No hay más' }}</button>
+    <article class="msg" *ngFor="let m of items; trackBy: trackById">
       <div class="meta">
         <strong>{{ m.from }}</strong>
         <time>{{ m.date | date:'short' }}</time>
       </div>
-      <p class="text">{{ m.text }}</p>
+      <p class="text" [ngClass]="{ 'me': m.from === 'Yo' }">{{ m.text }}</p>
     </article>
     <div class="pager" style="display:flex; gap:8px; margin:8px 0;">
       <button class="btn" type="button" (click)="loadPage(page - 1)" [disabled]="page <= 0">Anterior</button>
@@ -20,7 +21,7 @@
     <div class="skeleton-msg"></div>
   </ng-template>
   <form class="composer" (submit)="$event.preventDefault(); send(input.value); input.value=''">
-    <input #input type="text" placeholder="Escribe un mensaje..." [disabled]="sending"/>
+    <textarea #input rows="2" placeholder="Escribe un mensaje..." [disabled]="sending" (keydown.enter)="onEnter($event, input)"></textarea>
     <button class="btn" type="submit" [disabled]="sending" [attr.aria-busy]="sending">{{ sending ? 'Enviando...' : 'Enviar' }}</button>
   </form>
 </section>

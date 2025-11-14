@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessagesService, MessageView } from '../../../core/services/messages.service';
 import { ActivatedRoute } from '@angular/router';
@@ -22,6 +22,16 @@ export class MyMessagesComponent {
   page = 0;
   size = 20;
   invalidReserva = false;
+  hasMore = true;
+  @ViewChild('listEl') listEl?: ElementRef<HTMLDivElement>;
+
+  trackById(_i: number, item: MessageView) { return item.id; }
+  onEnter(ev: any, input: HTMLTextAreaElement) {
+    if (ev.shiftKey) return;
+    this.send(input.value);
+    input.value = '';
+    ev.preventDefault();
+  }
 
   ngOnInit() {
     this.reservaId = String(this.route.snapshot.paramMap.get('id') || '');
@@ -43,6 +53,18 @@ export class MyMessagesComponent {
     });
   }
 
+  loadMore() {
+    const nextPage = this.page + 1;
+    this.messages.listByReserva(this.reservaId, nextPage, this.size).subscribe({
+      next: (older: MessageView[]) => {
+        if (!older.length) { this.hasMore = false; return; }
+        this.page = nextPage;
+        this.items = older.concat(this.items);
+      },
+      error: (_err: unknown) => {}
+    });
+  }
+
   send(msg: string) {
     const text = msg.trim();
     if (!text) return;
@@ -53,6 +75,10 @@ export class MyMessagesComponent {
         // Refrescar hilo desde backend para consistencia
         this.loadPage(this.page);
         this.sending = false;
+        setTimeout(() => {
+          const el = this.listEl?.nativeElement;
+          if (el) el.scrollTop = el.scrollHeight;
+        }, 100);
       },
       error: (err: unknown) => {
         this.notifications.httpError(err);
