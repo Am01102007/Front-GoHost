@@ -266,6 +266,24 @@ export class AuthService {
       return (current?.rol === 'ANFITRION') ? 'ANFITRION' : 'HUESPED';
     };
 
+    const resolveAvatar = (x: any): string | undefined => {
+      const candidates = [
+        x?.avatarUrl,
+        x?.avatar,
+        x?.fotoPerfilUrl,
+        x?.fotoPerfil,
+        x?.imagenPerfilUrl,
+        x?.imagenPerfil,
+        x?.imageUrl,
+        x?.profileImageUrl
+      ];
+      for (const c of candidates) {
+        const val = (c ?? '').toString().trim();
+        if (val) return val;
+      }
+      return current?.avatarUrl;
+    };
+
     return {
       id: String(d.id ?? current?.id ?? ''),
       email: String(d.email ?? current?.email ?? ''),
@@ -274,7 +292,7 @@ export class AuthService {
       telefono: d.telefono ?? current?.telefono ?? '',
       rol: resolveRole(d),
       fechaNacimiento: d.fechaNacimiento ?? current?.fechaNacimiento ?? '',
-      avatarUrl: d.avatarUrl ?? d.avatar ?? current?.avatarUrl
+      avatarUrl: resolveAvatar(d)
     };
   }
 

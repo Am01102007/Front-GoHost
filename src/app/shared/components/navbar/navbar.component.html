@@ -36,9 +36,9 @@
     <div class="auth-section">
       @if (auth.isLoggedIn()) {
         <div class="user-info">
+          <img [src]="currentUser()?.avatarUrl || '/icons/user.svg'" alt="Usuario" width="28" height="28" style="border-radius:50%; object-fit:cover; margin-right:8px;" />
           <span [ngClass]="['role-badge', (currentUser()?.rol || '').toLowerCase()]">
             {{ currentUser()?.rol?.toLowerCase() === 'anfitrion' ? 'Anfitrión' : 'Huésped' }}
-            <img src="/icons/user.svg" alt="Usuario" width="16" height="16" style="margin-left:6px; vertical-align:middle;" />
           </span>
           <span class="user-name">{{ currentUser()?.nombre }}</span>
         </div>
