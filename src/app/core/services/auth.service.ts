@@ -741,6 +741,7 @@ export class AuthService {
           }
           this.currentUser.set(merged);
           this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
+          this.dataSyncService.invalidateCache('users');
           console.log('✅ Perfil de usuario actualizado (con foto) | MAIL_PROVIDER=backend | MAIL_ENABLED=true (correo enviado por backend)');
         }),
         catchError(err => {
@@ -770,6 +771,7 @@ export class AuthService {
         const merged = { ...user, ...userUpdated };
         this.currentUser.set(merged);
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
+        this.dataSyncService.invalidateCache('users');
         console.log('✅ Perfil de usuario actualizado | MAIL_PROVIDER=backend | MAIL_ENABLED=true (correo enviado por backend)');
       }),
       finalize(() => this.loading.set(false))
@@ -816,6 +818,7 @@ export class AuthService {
 
     return tryPut(primaryUrl).pipe(
       catchError(_ => tryPut(fallbackUrl)),
+      tap(() => this.dataSyncService.invalidateCache('users')),
       finalize(() => this.loading.set(false))
     );
   }
