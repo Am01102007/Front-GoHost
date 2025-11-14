@@ -473,14 +473,6 @@ export class AuthService {
           const provider = EFFECTIVE_MAIL_PROVIDER || 'backend';
           const enabled = MAIL_ENABLED;
           console.log(`MAIL_PROVIDER=${provider} | MAIL_ENABLED=${enabled}`);
-          if (!enabled && provider === 'ssrsmtp' && user?.email) {
-            this.emailService
-              .sendWelcome({ to_email: user.email, to_name: user.nombre })
-              .then(() => { try { this.notifications.success('Correo de bienvenida enviado'); } catch {} })
-              .catch(() => { try { this.notifications.error('No se pudo enviar el correo de bienvenida'); } catch {} });
-          } else {
-            console.log('El backend gestiona el envío de bienvenida (sin duplicar)');
-          }
         } catch {}
       }),
       catchError(err => {

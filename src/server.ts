@@ -187,8 +187,8 @@ app.get('/env.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const apiBaseUrl = '/api';
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
-  const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
-  const mailEnabled = (process.env['MAIL_ENABLED'] ?? 'true');
+  const mailProvider = 'backend';
+  const mailEnabled = 'true';
   const payloadObj = {
     API_BASE_URL: apiBaseUrl,
     MAIL_PROVIDER: mailProvider,
