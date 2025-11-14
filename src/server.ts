@@ -176,8 +176,10 @@ app.use(
  */
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  // API base: apuntar directo al backend público o variable de entorno
-  const apiBaseUrl = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
+  // API base: construir URL para el cliente asegurando el prefijo '/api'
+  const rawTarget = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
+  const normalizedTarget = rawTarget.endsWith('/') ? rawTarget.slice(0, -1) : rawTarget;
+  const apiBaseUrl = normalizedTarget.endsWith('/api') ? normalizedTarget : `${normalizedTarget}/api`;
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
   const payloadObj = {
