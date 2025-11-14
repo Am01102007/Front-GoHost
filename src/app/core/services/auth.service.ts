@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
-import { map, tap, catchError, finalize } from 'rxjs/operators';
+import { map, tap, catchError, finalize, timeout } from 'rxjs/operators';
 import { User } from '../models/user.model';
 import { EmailService } from './email.service';
 import { EFFECTIVE_MAIL_PROVIDER } from '../../shared/email.config';
@@ -438,6 +438,7 @@ export class AuthService {
     if (userData.rol) payload.rol = userData.rol;
 
   return this.http.post<any>(url, payload, { observe: 'response' }).pipe(
+      timeout(30000),
       map(resp => {
         lastStatus = resp.status || 0;
         const body = resp.body ?? {};
@@ -485,7 +486,11 @@ export class AuthService {
       catchError(err => {
         const t1 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
         const dur = Math.round(t1 - t0);
-        console.error(`[HTTP POST] ${url} -> ${err?.status ?? 0} | ${dur} ms | ${err?.message ?? 'Unknown Error'}`);
+        const isTimeout = (err?.name === 'TimeoutError');
+        if (isTimeout) {
+          console.warn(`[REGISTER] timeout tras 30s; continuando sin bloquear al usuario (${dur} ms)`);
+        }
+        console.error(`[HTTP POST] ${url} -> ${err?.status ?? 0} | ${dur} ms | ${err?.message ?? (isTimeout ? 'Timeout' : 'Unknown Error')}`);
         let errorMessage = 'Error al registrar usuario. Inténtalo de nuevo.';
         if (err.status === 409) {
           errorMessage = 'El email ya está registrado. Usa otro email.';
