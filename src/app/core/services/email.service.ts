@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { MAIL_PROVIDER } from '../../shared/email.config';
+import { EFFECTIVE_MAIL_PROVIDER } from '../../shared/email.config';
 
 @Injectable({ providedIn: 'root' })
 export class EmailService {
   constructor(private http: HttpClient) {}
   
   private isSsrSmtpEnabled(): boolean {
-    return (MAIL_PROVIDER || '').toLowerCase() === 'ssrsmtp';
+    return (EFFECTIVE_MAIL_PROVIDER || '').toLowerCase() === 'ssrsmtp';
   }
 
   private async sendViaBackend(type: string, to: string, data: any): Promise<void> {
