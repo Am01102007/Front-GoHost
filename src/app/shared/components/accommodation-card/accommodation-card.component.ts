@@ -1,6 +1,7 @@
 import { Component, Input, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { CurrencyUserPipe } from '../../pipes/currency-user.pipe';
 import { Listing } from '../../../core/models/listing.model';
 import { ListingsService } from '../../../core/services/listings.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
@@ -23,7 +24,7 @@ import { isCloudinaryUrl, withTransforms, buildSrcSet, defaultSizes } from '../.
 @Component({
   selector: 'app-accommodation-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CurrencyUserPipe],
   templateUrl: './accommodation-card.component.html',
   styleUrls: ['./accommodation-card.component.scss']
 })

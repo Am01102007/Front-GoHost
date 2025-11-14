@@ -34,6 +34,15 @@
     </ul>
     
     <div class="auth-section">
+      <div style="display:flex; align-items:center; gap:8px; margin-right:12px;">
+        <label for="currency-select">Moneda</label>
+        <select id="currency-select" [value]="currentCurrency" (change)="setCurrency($any($event.target).value)">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="COP">COP</option>
+          <option value="MXN">MXN</option>
+        </select>
+      </div>
       @if (auth.isLoggedIn()) {
         <div class="user-info">
           <img [src]="currentUser()?.avatarUrl || '/icons/user.svg'" alt="Usuario" width="28" height="28" style="border-radius:50%; object-fit:cover; margin-right:8px;" />

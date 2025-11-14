@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
+import { CurrencyService } from '../../../core/services/currency.service';
 
 @Component({
   selector: 'app-navbar',
@@ -12,6 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class NavbarComponent {
   auth = inject(AuthService);
+  currency = inject(CurrencyService);
   currentUser = this.auth.currentUser;
   isMobileMenuOpen = false;
 
@@ -22,4 +24,7 @@ export class NavbarComponent {
   closeMobileMenu() {
     this.isMobileMenuOpen = false;
   }
+
+  get currentCurrency(): string { return this.currency.getCurrency(); }
+  setCurrency(c: string) { this.currency.setCurrency(c); }
 }

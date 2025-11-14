@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ListingsService } from '../../../core/services/listings.service';
 import { CommentsSectionComponent } from '../../../shared/components/comments-section/comments-section.component';
+import { CurrencyUserPipe } from '../../../shared/pipes/currency-user.pipe';
 import { MapService } from '../../../core/services/map.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +11,7 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-listing-detail',
   standalone: true,
-  imports: [CommonModule, CommentsSectionComponent, RouterLink],
+  imports: [CommonModule, CommentsSectionComponent, RouterLink, CurrencyUserPipe],
   templateUrl: './listing-detail.component.html',
   styleUrls: ['./listing-detail.component.scss']
 })

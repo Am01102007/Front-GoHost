@@ -2,6 +2,7 @@ import { Component, inject, OnInit, computed, signal, effect, ElementRef, ViewCh
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ListingsService } from '../../../core/services/listings.service';
+import { CurrencyUserPipe } from '../../../shared/pipes/currency-user.pipe';
 import { AccommodationCardComponent } from '../../../shared/components/accommodation-card/accommodation-card.component';
 import { NotificationsService } from '../../../core/services/notifications.service';
 
@@ -22,7 +23,7 @@ import { NotificationsService } from '../../../core/services/notifications.servi
 @Component({
   selector: 'app-browse-listings',
   standalone: true,
-  imports: [CommonModule, FormsModule, AccommodationCardComponent],
+  imports: [CommonModule, FormsModule, AccommodationCardComponent, CurrencyUserPipe],
   templateUrl: './browse-listings.component.html',
   styleUrls: ['./browse-listings.component.scss']
 })

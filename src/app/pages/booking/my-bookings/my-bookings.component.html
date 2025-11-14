@@ -17,7 +17,7 @@
             <span class="badge" [class.pendiente]="r.estado==='pendiente'" [class.pagado]="r.estado==='pagado'">{{ r.estado }}</span>
           </div>
           <p class="rango">{{ r.fechaInicio }} — {{ r.fechaFin }}</p>
-          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: ${{ r.total }}</p>
+          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: {{ r.total | currencyUser }}</p>
           <div class="actions">
             <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
             <button class="btn btn-primary" (click)="pagar(r.id)" [disabled]="r.estado==='pagado' || actionLoading[r.id]" [attr.aria-busy]="actionLoading[r.id]">
@@ -42,7 +42,7 @@
             <span class="badge cancelado">cancelado</span>
           </div>
           <p class="rango">{{ r.fechaInicio }} — {{ r.fechaFin }}</p>
-          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: ${{ r.total }}</p>
+          <p class="meta">Huéspedes: {{ r.huespedes }} · Total: {{ r.total | currencyUser }}</p>
           <div class="actions">
             <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
           </div>

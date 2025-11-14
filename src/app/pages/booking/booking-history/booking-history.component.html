@@ -39,7 +39,7 @@
         
         <div class="booking-details">
           <span class="guests">{{ booking.huespedes }} huéspedes</span>
-          <span class="total">${{ booking.total }}</span>
+          <span class="total">{{ booking.total | currencyUser }}</span>
         </div>
         
         <div class="actions">

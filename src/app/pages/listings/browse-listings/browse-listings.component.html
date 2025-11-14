@@ -122,7 +122,7 @@
           <span class="stat-label">Ciudades</span>
         </div>
         <div class="stat-item" *ngIf="searchStats().averagePrice > 0">
-          <span class="stat-value">${{ searchStats().averagePrice | number:'1.0-0' }}</span>
+          <span class="stat-value">{{ searchStats().averagePrice | currencyUser }}</span>
           <span class="stat-label">Precio promedio</span>
         </div>
       </div>

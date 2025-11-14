@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CurrencyUserPipe } from '../../../shared/pipes/currency-user.pipe';
 import { Router, RouterLink } from '@angular/router';
 import { BookingsService } from '../../../core/services/bookings.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,7 +9,7 @@ import { ListingsService } from '../../../core/services/listings.service';
 @Component({
   selector: 'app-booking-history',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CurrencyUserPipe],
   templateUrl: './booking-history.component.html',
   styleUrls: ['./booking-history.component.scss']
 })
