@@ -22,6 +22,8 @@ export class CommentsSectionComponent {
   bookings = inject(BookingsService);
 
   open = signal(false);
+  loading = signal(false);
+  actionLoading = signal(false);
 
   form = this.fb.nonNullable.group({
     rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
@@ -55,16 +57,21 @@ export class CommentsSectionComponent {
   toggle() {
     const newState = !this.open();
     this.open.set(newState);
+    if (newState) {
+      this.loading.set(true);
+    }
     // Asegurar que las reservas del usuario estén cargadas al abrir
     if (newState) {
       this.bookings.fetchMine().subscribe({
-        error: () => {}
+        next: () => { this.loading.set(false); },
+        error: () => { this.loading.set(false); }
       });
     }
   }
 
   add() {
     if (this.form.invalid) return;
+    this.actionLoading.set(true);
     const v = this.form.getRawValue();
     const user = this.auth.currentUser()?.nombre;
     const currentUserId = this.auth.currentUser()?.id;
@@ -90,5 +97,6 @@ export class CommentsSectionComponent {
       bookingId: String(booking.id)
     });
     this.form.reset({ rating: 5, text: '' });
+    this.actionLoading.set(false);
   }
 }

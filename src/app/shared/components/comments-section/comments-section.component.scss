@@ -5,7 +5,11 @@
 .modal-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:8px;margin-bottom:12px}
 .close{border:none;background:transparent;font-size:22px;cursor:pointer;color:#6b7280}
 .list{display:grid;gap:12px;margin-bottom:12px;max-height:40vh;overflow:auto}
+.skeleton-list{display:grid;gap:12px}
+.skeleton-item{height:64px;border-radius:10px;background:linear-gradient(90deg,#eee,#f5f5f5,#eee);background-size:200% 100%;animation:skeleton 1.2s infinite}
+@keyframes skeleton{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .comment{border:1px solid #eee;border-radius:10px;padding:10px;background:#fafafa}
+.comment.hidden{display:none}
 .comment .meta{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:12px}
 .comment .user{font-weight:600;color:#111827}
 .stars .star{color:#d1d5db;margin-right:2px}
@@ -14,4 +18,3 @@
 .form{display:grid;gap:10px}
 .form select,.form textarea{border:1px solid #d1d5db;border-radius:8px;padding:8px;width:100%}
 .actions{display:flex;gap:8px;justify-content:flex-end}
-

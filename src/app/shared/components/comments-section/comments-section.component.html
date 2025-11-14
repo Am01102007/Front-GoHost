@@ -8,7 +8,12 @@
     </header>
 
     <section class="list">
-      <article *ngFor="let c of items" class="comment">
+      <div class="skeleton-list" *ngIf="loading()">
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+      </div>
+      <article *ngFor="let c of items" class="comment" [class.hidden]="loading()">
         <div class="meta">
           <span class="user">{{ c.user || 'Anónimo' }}</span>
           <span class="stars" [attr.aria-label]="c.rating + ' estrellas'">
@@ -18,7 +23,7 @@
         </div>
         <p class="text">{{ c.text }}</p>
       </article>
-      <p *ngIf="items.length === 0" class="empty">Sé el primero en comentar.</p>
+      <p *ngIf="items.length === 0 && !loading()" class="empty">Sé el primero en comentar.</p>
     </section>
 
     <form [formGroup]="form" (ngSubmit)="add()" class="form">
@@ -34,7 +39,7 @@
         <textarea rows="3" formControlName="text" placeholder="Escribe tu opinión"></textarea>
       </label>
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid || !canComment()" class="btn btn-primary">Agregar</button>
+        <button type="submit" [disabled]="form.invalid || !canComment() || actionLoading()" class="btn btn-primary" [attr.aria-busy]="actionLoading()">{{ actionLoading() ? 'Agregando...' : 'Agregar' }}</button>
         <button type="button" (click)="toggle()" class="btn btn-ghost">Cerrar</button>
       </div>
     </form>
