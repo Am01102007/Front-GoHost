@@ -12,9 +12,18 @@ import { AccommodationCardComponent } from '../../../shared/components/accommoda
 })
 export class FavoritesComponent {
   listingsSvc = inject(ListingsService);
+  loading = false;
 
   get favs() {
     const ids = this.listingsSvc.favorites();
     return this.listingsSvc.listings().filter(l => ids.includes(l.id));
+  }
+
+  ngOnInit() {
+    this.loading = true;
+    this.listingsSvc.refreshListings().subscribe({
+      next: () => { this.loading = false; },
+      error: () => { this.loading = false; }
+    });
   }
 }

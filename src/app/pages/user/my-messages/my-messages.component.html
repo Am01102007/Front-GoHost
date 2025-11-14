@@ -1,2 +1,21 @@
-<h1>Mis Mensajes</h1>
-<p>Esta página está en construcción.</p>
+<section class="messages">
+  <h1>Mis Mensajes</h1>
+  <div class="list" *ngIf="!loading; else skeletonMsgs">
+    <article class="msg" *ngFor="let m of items">
+      <div class="meta">
+        <strong>{{ m.from }}</strong>
+        <time>{{ m.date | date:'short' }}</time>
+      </div>
+      <p class="text">{{ m.text }}</p>
+    </article>
+  </div>
+  <ng-template #skeletonMsgs>
+    <div class="skeleton-msg"></div>
+    <div class="skeleton-msg"></div>
+    <div class="skeleton-msg"></div>
+  </ng-template>
+  <form class="composer" (submit)="$event.preventDefault(); send(input.value); input.value=''">
+    <input #input type="text" placeholder="Escribe un mensaje..." [disabled]="sending"/>
+    <button class="btn" type="submit" [disabled]="sending" [attr.aria-busy]="sending">{{ sending ? 'Enviando...' : 'Enviar' }}</button>
+  </form>
+</section>
