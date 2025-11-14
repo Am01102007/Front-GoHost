@@ -6,4 +6,13 @@
  * Si no existe, usa el `environment.apiUrl` (que en producción apunta directo al backend).
  */
 import { environment } from '../../environments/environment';
-export const API_BASE = (globalThis as any).__ENV__?.API_BASE_URL ?? environment.apiUrl;
+
+// Usa primero la URL inyectada por /env.js.
+// Si no existe y estamos en localhost, usa '/api' para el proxy SSR.
+// En otros casos, usa environment.apiUrl (producción apunta al backend remoto).
+const RUNTIME_API = (globalThis as any).__ENV__?.API_BASE_URL;
+const IS_LOCALHOST = typeof globalThis !== 'undefined'
+  && typeof (globalThis as any).location !== 'undefined'
+  && /localhost|127\.0\.0\.1/i.test((globalThis as any).location.hostname || '');
+
+export const API_BASE = RUNTIME_API ?? (IS_LOCALHOST ? '/api' : environment.apiUrl);
