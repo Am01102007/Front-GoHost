@@ -32,8 +32,8 @@ export const routes: Routes = [
   // Página de diagnósticos eliminada
   
   // Rutas específicas para anfitriones
-  { path: 'crear-alojamiento', component: CreateListingComponent, canMatch: [hostMatch], canActivate: [hostGuard], canDeactivate: [pendingChangesGuard] },
-  { path: 'editar-alojamiento/:id', loadComponent: () => import('./pages/listings/edit-listing/edit-listing.component').then(m => m.EditListingComponent), canMatch: [hostMatch], canActivate: [hostGuard], canDeactivate: [pendingChangesGuard] },
+  { path: 'crear-alojamiento', component: CreateListingComponent, canMatch: [hostMatch], canActivate: [hostGuard] },
+  { path: 'editar-alojamiento/:id', loadComponent: () => import('./pages/listings/edit-listing/edit-listing.component').then(m => m.EditListingComponent), canMatch: [hostMatch], canActivate: [hostGuard] },
   { path: 'mis-alojamientos', component: MyListingsComponent, canMatch: [hostMatch], canActivate: [hostGuard] },
   { path: 'solicitudes-de-alojamientos', component: AccommodationRequestsComponent, canMatch: [hostMatch], canActivate: [hostGuard] },
   // Reservas del anfitrión (todas las reservas asociadas a sus alojamientos)
@@ -55,7 +55,7 @@ export const routes: Routes = [
 
   // Rutas específicas para huéspedes
   { path: 'favoritos', component: FavoritesComponent, canMatch: [guestMatch], canActivate: [guestGuard] },
-  { path: 'checkout', loadComponent: () => import('./pages/checkout/checkout/checkout.component').then(m => m.CheckoutComponent), canMatch: [guestMatch], canActivate: [guestGuard], canDeactivate: [pendingChangesGuard] },
+  { path: 'checkout', loadComponent: () => import('./pages/checkout/checkout/checkout.component').then(m => m.CheckoutComponent), canMatch: [guestMatch], canActivate: [guestGuard] },
   { path: 'mis-reservas', component: MyBookingsComponent, canMatch: [guestMatch], canActivate: [guestGuard] },
   { path: 'historial-de-estadias', loadComponent: () => import('./pages/booking/booking-history/booking-history.component').then(m => m.BookingHistoryComponent), canMatch: [guestMatch], canActivate: [guestGuard] },
 

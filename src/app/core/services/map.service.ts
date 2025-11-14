@@ -88,25 +88,51 @@ export class MapService {
    */
   enableTerrain(map: any, exaggeration = 1.5): void {
     if (!map) return;
-    if (!map.getSource('mapbox-dem')) {
-      map.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14
-      });
-    }
-    map.setTerrain({ source: 'mapbox-dem', exaggeration });
-    if (!map.getLayer('sky')) {
-      map.addLayer({
-        id: 'sky',
-        type: 'sky',
-        paint: {
-          'sky-type': 'atmosphere',
-          'sky-atmosphere-sun': [0.0, 0.0],
-          'sky-atmosphere-sun-intensity': 15
-        }
-      });
+    const apply = () => {
+      if (!map.getSource('mapbox-dem')) {
+        map.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14
+        });
+      }
+      map.setTerrain({ source: 'mapbox-dem', exaggeration });
+      if (!map.getLayer('sky')) {
+        map.addLayer({
+          id: 'sky',
+          type: 'sky',
+          paint: {
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 0.0],
+            'sky-atmosphere-sun-intensity': 15
+          }
+        });
+      }
+      // Edificios 3D
+      if (!map.getLayer('3d-buildings')) {
+        const layers = map.getStyle()?.layers || [];
+        const labelLayerId = (layers.find((l: any) => l.type === 'symbol' && l.layout && l.layout['text-field']) || {}).id;
+        map.addLayer({
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 15,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.6
+          }
+        }, labelLayerId);
+      }
+    };
+    if (typeof map.isStyleLoaded === 'function' && !map.isStyleLoaded()) {
+      map.once('style.load', apply);
+    } else {
+      apply();
     }
   }
 
@@ -134,9 +160,15 @@ export class MapService {
    * @param to Destino de la ruta.
    * @returns Observable que completa tras actualizar la capa de ruta.
    */
+  private lastRouteTs = 0;
+  private readonly routeCooldownMs = 3000;
+
   drawRoute(map: any, from: LngLat, to: LngLat): Observable<void> {
     if (!this.token) return of(void 0);
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?geometries=geojson&overview=full&access_token=${this.token}`;
+    const now = Date.now();
+    if (now - this.lastRouteTs < this.routeCooldownMs) return of(void 0);
+    this.lastRouteTs = now;
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from.lng},${from.lat};${to.lng},${to.lat}?geometries=geojson&overview=full&alternatives=false&access_token=${this.token}`;
     return this.http.get<any>(url).pipe(
       tap((res: any) => {
         const geometry = res?.routes?.[0]?.geometry;
@@ -146,18 +178,36 @@ export class MapService {
         }
         const geojson = { type: 'Feature', properties: {}, geometry };
         const sourceId = 'route';
-        if (!map.getSource(sourceId)) {
-          map.addSource(sourceId, { type: 'geojson', data: geojson });
-          map.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: sourceId,
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': '#3b82f6', 'line-width': 4 }
-          });
+        const apply = () => {
+          if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, { type: 'geojson', data: geojson });
+            map.addLayer({
+              id: 'route-line',
+              type: 'line',
+              source: sourceId,
+              layout: { 'line-join': 'round', 'line-cap': 'round' },
+              paint: { 'line-color': '#3b82f6', 'line-width': 4 }
+            });
+          } else {
+            const src = map.getSource(sourceId);
+            src.setData(geojson);
+          }
+          // Ajustar vista a la ruta
+          try {
+            const coords = geometry.coordinates as number[][];
+            const bounds = new (this.w?.mapboxgl?.LngLatBounds || (class { constructor(){} extend(){} }))();
+            if (bounds.extend) {
+              for (const c of coords) bounds.extend(c as any);
+              map.fitBounds(bounds, { padding: 40, maxZoom: 15, duration: 600 });
+            }
+          } catch {}
+        };
+        if (typeof map.isStyleLoaded === 'function' && !map.isStyleLoaded()) {
+          map.once('style.load', apply);
+        } else if (!map.loaded || (typeof map.loaded === 'function' && !map.loaded())) {
+          map.once('load', apply);
         } else {
-          const src = map.getSource(sourceId);
-          src.setData(geojson);
+          apply();
         }
       }),
       catchError((err) => {

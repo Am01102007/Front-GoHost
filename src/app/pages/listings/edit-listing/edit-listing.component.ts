@@ -90,10 +90,12 @@ export class EditListingComponent implements OnInit {
     );
   }
 
-  guardar() {
+  async guardar() {
     if (this.form.invalid || !this.listingId) return;
     this.uploading = true;
     const v = this.form.value;
+    const ok = await this.notifications.confirm('Guardar cambios', '¿Deseas guardar los cambios del alojamiento?');
+    if (!ok) { this.uploading = false; return; }
     const payloadBase: any = {
       titulo: v.titulo!,
       descripcion: v.descripcion!,

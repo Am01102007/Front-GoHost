@@ -117,19 +117,17 @@ export class CreateListingComponent {
     );
   }
 
-  removeImage(index: number) {
+  async removeImage(index: number) {
+    const ok = await this.notifications.confirm('Eliminar imagen', '¿Deseas eliminar esta imagen?');
+    if (!ok) return;
     this.selectedFiles.splice(index, 1);
     this.photoPreviews.splice(index, 1);
-    
-    this.notifications.info(
-      'Imagen eliminada', 
-      `Quedan ${this.selectedFiles.length} imagen(es).`
-    );
+    this.notifications.info('Imagen eliminada', `Quedan ${this.selectedFiles.length} imagen(es).`);
   }
 
   // Eliminado: uploadImages. El backend recibe las imágenes directamente vía multipart/form-data.
 
-  crear() {
+  async crear() {
     if (this.form.invalid) {
       this.notifications.error('Formulario inválido', 'Por favor completa todos los campos requeridos.');
       return;
@@ -144,6 +142,8 @@ export class CreateListingComponent {
     }
 
     const v = this.form.value;
+    const ok = await this.notifications.confirm('Crear alojamiento', `¿Deseas crear "${v.titulo}"?`);
+    if (!ok) return;
     
     const doCreate = () => {
       this.listingsSvc.create({
@@ -162,6 +162,7 @@ export class CreateListingComponent {
             'Alojamiento creado', 
             `Tu alojamiento "${v.titulo}" fue creado correctamente con ${this.selectedFiles.length} imagen(es).`
           );
+          this.notifications.info('Correo enviado', 'Se envió una confirmación por correo desde el backend.');
           this.router.navigate(['/mis-alojamientos']);
         },
         error: (err) => {
@@ -183,7 +184,9 @@ export class CreateListingComponent {
     this.form.patchValue({ servicios: [...current, s] });
   }
 
-  removeService(index: number) {
+  async removeService(index: number) {
+    const ok = await this.notifications.confirm('Eliminar servicio', '¿Deseas eliminar este servicio?');
+    if (!ok) return;
     const current = this.form.value.servicios || [];
     if (index < 0 || index >= current.length) return;
     const next = current.slice(0, index).concat(current.slice(index + 1));
