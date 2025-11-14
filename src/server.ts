@@ -61,13 +61,9 @@ function resolveApiFallbackTarget(primary: string): string | null {
 }
 
 /**
- * Proxy de API (opcional): reenvía las peticiones que comienzan con /api.
- * Habilitar sólo si `ENABLE_SSR_API_PROXY=true` en entorno.
- * En desarrollo, apunta a localhost; en prod, se recomienda que el cliente
- * llame directo al backend público y no depender de este proxy.
+ * Proxy de API: reenvía las peticiones que comienzan con /api.
  */
-if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
-  app.use('/api', (req, res) => {
+app.use('/api', (req, res) => {
   // Resuelve el destino vía variable de entorno, con fallback sensible.
   const API_TARGET = resolveApiTarget();
   const API_FALLBACK = resolveApiFallbackTarget(API_TARGET);
@@ -98,9 +94,22 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
     .on('data', (chunk: Buffer) => chunks.push(chunk))
     .on('end', async () => {
       const bodyBuffer = Buffer.concat(chunks);
+      // Si el stream ya fue consumido por express.json(), usar req.body como respaldo
+      const parsed = (req as any).body;
+      const hasParsedBody = parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0;
+      const parsedBodyBuffer = hasParsedBody ? Buffer.from(JSON.stringify(parsed)) : undefined;
+
+      // Asegurar content-type en peticiones con body
+      if (method !== 'GET' && method !== 'HEAD') {
+        const hasBody = bodyBuffer.length > 0 || !!parsedBodyBuffer;
+        if (hasBody && !headers['content-type']) {
+          headers['content-type'] = 'application/json';
+        }
+      }
+
       const body = (method === 'GET' || method === 'HEAD')
         ? undefined
-        : (bodyBuffer.length ? bodyBuffer : undefined);
+        : (bodyBuffer.length ? bodyBuffer : parsedBodyBuffer);
 
       // Helper para intentar un destino
       const doFetch = async (base: string) => {
@@ -160,7 +169,6 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
       res.status(400).json({ error: 'Bad Request', detail: 'Stream error' });
     });
 });
-}
 /**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
@@ -181,17 +189,7 @@ if (process.env['ENABLE_SSR_API_PROXY'] === 'true') {
 app.get('/env.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  // API base: si estamos en localhost, usar proxy SSR '/api' para evitar CORS;
-  // en producción, apuntar al backend remoto público.
-  const isLocalHost = /localhost|127\.0\.0\.1/i.test(req.hostname || '');
-  let apiBaseUrl: string;
-  if (isLocalHost) {
-    apiBaseUrl = '/api';
-  } else {
-    const rawTarget = process.env['API_TARGET'] || 'https://backend-gohost-production.up.railway.app';
-    const normalizedTarget = rawTarget.endsWith('/') ? rawTarget.slice(0, -1) : rawTarget;
-    apiBaseUrl = normalizedTarget.endsWith('/api') ? normalizedTarget : `${normalizedTarget}/api`;
-  }
+  const apiBaseUrl = '/api';
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = process.env['MAIL_PROVIDER'] || 'backend';
   const payloadObj = {
@@ -200,6 +198,25 @@ app.get('/env.js', (req, res) => {
   };
   const payload = `window.__ENV__ = Object.assign({}, window.__ENV__, ${JSON.stringify(payloadObj)});`;
   res.send(payload);
+});
+
+// Healthcheck SSR que consulta el backend
+app.get('/health', async (req, res) => {
+  try {
+    const base = resolveApiTarget();
+    const url = `${base}/health`;
+    const response = await fetch(url, { method: 'GET' });
+    res.status(response.status);
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
+      res.setHeader(name, value);
+    });
+    const buf = Buffer.from(await response.arrayBuffer());
+    res.send(buf);
+  } catch (err: any) {
+    res.status(503).json({ status: 'DOWN', error: err?.message || 'healthcheck failed' });
+  }
 });
 
 /**
