@@ -396,10 +396,41 @@ export class AuthService {
     this.error.set(null);
 
     const url = `${this.API_URL}/auth/register`;
-    const payload = {
-      ...userData,
-      rol: userData.rol || 'HUESPED'
+    const normalizeDate = (d?: string): string | undefined => {
+      if (!d) return undefined;
+      const s = String(d).trim();
+      if (!s) return undefined;
+      // Convertir dd/MM/yyyy → yyyy-MM-dd si aplica
+      const slash = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+      const m = s.match(slash);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      // Si ya viene como yyyy-MM-dd, dejar igual
+      const dash = /^(\d{4})-(\d{2})-(\d{2})$/;
+      if (dash.test(s)) return s;
+      // Intentar Date parse y formatear
+      const dt = new Date(s);
+      if (!isNaN(dt.getTime())) {
+        const yyyy = dt.getFullYear();
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const dd = String(dt.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      return s;
     };
+
+    const payload: any = {
+      email: userData.email,
+      password: userData.password,
+      nombre: userData.nombre,
+      apellidos: userData.apellido,
+      telefono: userData.telefono,
+      ciudad: userData.ciudad,
+      pais: userData.pais,
+      fechaNacimiento: normalizeDate(userData.fechaNacimiento),
+      tipoDocumento: userData.tipoDocumento,
+      numeroDocumento: userData.numeroDocumento
+    };
+    if (userData.rol) payload.rol = userData.rol;
 
   return this.http.post<any>(url, payload).pipe(
       map(response => {
