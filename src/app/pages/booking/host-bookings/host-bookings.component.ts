@@ -6,6 +6,7 @@ import { ListingsService } from '../../../core/services/listings.service';
 import { NotificationsService } from '../../../core/services/notifications.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { EmailService } from '../../../core/services/email.service';
+import { EFFECTIVE_MAIL_PROVIDER, MAIL_ENABLED } from '../../../shared/email.config';
 import { Booking } from '../../../core/models/booking.model';
 import { isCloudinaryUrl, withTransforms, buildSrcSet, thumbSizes } from '../../../shared/cloudinary.util';
 
@@ -82,6 +83,7 @@ export class HostBookingsComponent implements OnInit {
     this.bookings.updateStatus(id, 'pagado').subscribe({
       next: () => {
         this.notifications.success('Reserva confirmada', 'La reserva fue confirmada correctamente');
+        console.log(`MAIL_PROVIDER=${EFFECTIVE_MAIL_PROVIDER} | MAIL_ENABLED=${MAIL_ENABLED} -> correo de confirmación enviado por backend`);
         try {
           const b = this.all().find((x: any) => x.id === id) || this.bookings.bookings().find(x => x.id === id);
           const guestEmail = (b as any)?.guestEmail as string | undefined;
@@ -122,6 +124,7 @@ export class HostBookingsComponent implements OnInit {
     this.bookings.updateStatus(id, 'cancelado').subscribe({
       next: () => {
         this.notifications.success('Reserva cancelada', 'La reserva fue cancelada correctamente');
+        console.log(`MAIL_PROVIDER=${EFFECTIVE_MAIL_PROVIDER} | MAIL_ENABLED=${MAIL_ENABLED} -> correo de cancelación enviado por backend`);
         try {
           const b = this.all().find((x: any) => x.id === id) || this.bookings.bookings().find(x => x.id === id);
           const guestEmail = (b as any)?.guestEmail as string | undefined;

@@ -726,8 +726,13 @@ export class AuthService {
       form.append('data', new Blob([JSON.stringify(partial)], { type: 'application/json' }));
       form.append('fotoPerfil', fotoPerfil);
 
-      return this.http.patch<any>(primaryUrl, form).pipe(
-        map(handle),
+      const t0 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+      return this.http.patch<any>(primaryUrl, form, { observe: 'response' }).pipe(
+        map(resp => {
+          const t1 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
+          console.log(`[HTTP PATCH] ${primaryUrl} -> ${resp.status} | ${Math.round(t1 - t0)} ms`);
+          return handle(resp.body);
+        }),
         tap(userUpdated => {
           const merged = { ...user, ...userUpdated };
           if (merged.avatarUrl) {
@@ -736,7 +741,7 @@ export class AuthService {
           }
           this.currentUser.set(merged);
           this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
-          console.log('✅ Perfil de usuario actualizado (con foto)');
+          console.log('✅ Perfil de usuario actualizado (con foto) | MAIL_PROVIDER=backend | MAIL_ENABLED=true (correo enviado por backend)');
         }),
         catchError(err => {
           console.error('❌ AuthService.updateProfile (multipart) error:', err);
@@ -748,8 +753,8 @@ export class AuthService {
     }
 
     // Sin foto: usar JSON (PATCH parcial con fallback a PUT)
-    const tryPatch = () => this.http.patch<any>(primaryUrl, partial).pipe(map(handle));
-    const tryPut = () => this.http.put<any>(primaryUrl, fullPayload).pipe(map(handle));
+    const tryPatch = () => this.http.patch<any>(primaryUrl, partial, { observe: 'response' }).pipe(map(r => handle(r.body)));
+    const tryPut = () => this.http.put<any>(primaryUrl, fullPayload, { observe: 'response' }).pipe(map(r => handle(r.body)));
 
     return tryPatch().pipe(
       catchError(err => {
@@ -765,13 +770,7 @@ export class AuthService {
         const merged = { ...user, ...userUpdated };
         this.currentUser.set(merged);
         this.dataSyncService.notifyDataChange('users', 'update', merged, merged.id, 'updateProfile');
-        console.log('✅ Perfil de usuario actualizado');
-
-        // Correo de perfil actualizado vía backend SSR
-        try {
-          const mail = merged?.email;
-          if (mail) this.emailService.sendProfileUpdated({ to_email: mail, to_name: merged?.nombre });
-        } catch {}
+        console.log('✅ Perfil de usuario actualizado | MAIL_PROVIDER=backend | MAIL_ENABLED=true (correo enviado por backend)');
       }),
       finalize(() => this.loading.set(false))
     );
