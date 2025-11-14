@@ -7,10 +7,10 @@ import { API_BASE } from '../config';
 
 export interface MessageDto {
   id: string;
+  reservaId?: string;
   remitenteNombre?: string;
   remitenteId?: string;
-  destinatarioId?: string;
-  texto: string;
+  contenido: string;
   creadoEn: string;
 }
 
@@ -27,15 +27,15 @@ export class MessagesService {
   private notifications = inject(NotificationsService);
   private base = `${API_BASE}/mensajes`;
 
-  listMine(page = 0, size = 20): Observable<MessageView[]> {
-    const url = `${this.base}/mias?page=${page}&size=${size}`;
+  listByReserva(reservaId: string, page = 0, size = 20): Observable<MessageView[]> {
+    const url = `${this.base}/reserva/${encodeURIComponent(reservaId)}?page=${page}&size=${size}`;
     return this.http.get<any>(url).pipe(
       map((res: any) => {
         const data: MessageDto[] = Array.isArray(res?.items) ? res.items : (Array.isArray(res) ? res : []);
         return data.map(dto => ({
           id: String(dto.id),
           from: dto.remitenteNombre || 'Usuario',
-          text: dto.texto,
+          text: dto.contenido,
           date: new Date(dto.creadoEn)
         }));
       }),
@@ -46,20 +46,19 @@ export class MessagesService {
     );
   }
 
-  sendText(text: string, toUserId?: string): Observable<MessageView> {
+  sendToReserva(reservaId: string, contenido: string): Observable<MessageView> {
     const url = `${this.base}`;
-    const payload: any = { texto: text.trim() };
-    if (toUserId) payload.destinatarioId = toUserId;
+    const payload: any = { reservaId, contenido: contenido.trim() };
     return this.http.post<any>(url, payload).pipe(
       map((dto: MessageDto) => ({
         id: String(dto.id),
         from: dto.remitenteNombre || 'Yo',
-        text: dto.texto,
+        text: dto.contenido,
         date: new Date(dto.creadoEn)
       })),
       catchError((err) => {
         this.notifications.httpError(err);
-        return of({ id: Math.random().toString(36).slice(2), from: 'Yo', text, date: new Date() });
+        return of({ id: Math.random().toString(36).slice(2), from: 'Yo', text: contenido, date: new Date() });
       })
     );
   }

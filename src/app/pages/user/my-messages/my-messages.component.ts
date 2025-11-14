@@ -38,8 +38,8 @@ export class MyMessagesComponent {
     this.loading = true;
     this.page = p;
     this.messages.listByReserva(this.reservaId, this.page, this.size).subscribe({
-      next: (items) => { this.items = items; this.loading = false; },
-      error: () => { this.loading = false; }
+      next: (items: MessageView[]) => { this.items = items; this.loading = false; },
+      error: (_err: unknown) => { this.loading = false; }
     });
   }
 
@@ -54,7 +54,7 @@ export class MyMessagesComponent {
         this.loadPage(this.page);
         this.sending = false;
       },
-      error: (err) => {
+      error: (err: unknown) => {
         this.notifications.httpError(err);
         this.sending = false;
       }
