@@ -63,8 +63,7 @@ function resolveApiFallbackTarget(primary: string): string | null {
 /**
  * Proxy de API: reenvía las peticiones que comienzan con /api.
  */
-app.use('/api', (req, res) => {
-  // Resuelve el destino vía variable de entorno, con fallback sensible.
+app.use('/api', async (req, res) => {
   const API_TARGET = resolveApiTarget();
   const API_FALLBACK = resolveApiFallbackTarget(API_TARGET);
 
@@ -76,11 +75,8 @@ app.use('/api', (req, res) => {
   delete headers['host'];
   delete headers['connection'];
   delete headers['content-length'];
-  // Evitar que el backend active CORS por orígenes dinámicos del dev server
   delete headers['origin'];
   delete headers['referer'];
-
-  // Evitar pasar Authorization inválido (p.ej., "Bearer null" o vacío)
   if (headers['authorization']) {
     const auth = headers['authorization'].trim();
     if (!auth || /^Bearer\s*(null|undefined)?$/i.test(auth)) {
@@ -88,44 +84,62 @@ app.use('/api', (req, res) => {
     }
   }
 
-  const chunks: Buffer[] = [];
+  const getBodyBuffer = (): Buffer | undefined => {
+    if (method === 'GET' || method === 'HEAD') return undefined;
+    const parsed = (req as any).body;
+    if (parsed && typeof parsed === 'object') {
+      const raw = Buffer.from(JSON.stringify(parsed));
+      if (!headers['content-type']) headers['content-type'] = 'application/json';
+      return raw;
+    }
+    return undefined;
+  };
 
-  (req as IncomingMessage)
-    .on('data', (chunk: Buffer) => chunks.push(chunk))
-    .on('end', async () => {
-      const bodyBuffer = Buffer.concat(chunks);
-      // Si el stream ya fue consumido por express.json(), usar req.body como respaldo
-      const parsed = (req as any).body;
-      const hasParsedBody = parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0;
-      const parsedBodyBuffer = hasParsedBody ? Buffer.from(JSON.stringify(parsed)) : undefined;
+  const ensureBody = async (): Promise<Buffer | undefined> => {
+    const fromParsed = getBodyBuffer();
+    if (fromParsed) return fromParsed;
+    const chunks: Buffer[] = [];
+    const msg = req as IncomingMessage;
+    if (msg.readableEnded) {
+      return chunks.length ? Buffer.concat(chunks) : undefined;
+    }
+    await new Promise<void>((resolve, reject) => {
+      msg.on('data', (chunk: Buffer) => chunks.push(chunk));
+      msg.on('end', () => resolve());
+      msg.on('error', (e) => reject(e));
+    });
+    const buf = Buffer.concat(chunks);
+    if (buf.length && !headers['content-type']) headers['content-type'] = 'application/json';
+    return buf.length ? buf : undefined;
+  };
 
-      // Asegurar content-type en peticiones con body
-      if (method !== 'GET' && method !== 'HEAD') {
-        const hasBody = bodyBuffer.length > 0 || !!parsedBodyBuffer;
-        if (hasBody && !headers['content-type']) {
-          headers['content-type'] = 'application/json';
-        }
-      }
+  const doFetch = async (base: string, body?: Buffer) => {
+    const targetUrl = `${base}${req.originalUrl}`;
+    const response = await fetch(targetUrl, { method, headers, body });
+    return { response, targetUrl } as const;
+  };
 
-      const body = (method === 'GET' || method === 'HEAD')
-        ? undefined
-        : (bodyBuffer.length ? bodyBuffer : parsedBodyBuffer);
-
-      // Helper para intentar un destino
-      const doFetch = async (base: string) => {
-        const targetUrl = `${base}${req.originalUrl}`;
-        const response = await fetch(targetUrl, { method, headers, body });
-        return { response, targetUrl } as const;
-      };
-
+  try {
+    const body = await ensureBody();
+    let { response } = await doFetch(API_TARGET, body);
+    if (response.status >= 500 && API_FALLBACK) {
+      console.warn(`[SSR] API primario ${API_TARGET} respondió ${response.status}. Intentando fallback...`);
+      ({ response } = await doFetch(API_FALLBACK, body));
+    }
+    res.status(response.status);
+    response.headers.forEach((value, name) => {
+      const lower = name.toLowerCase();
+      if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
+      res.setHeader(name, value);
+    });
+    const arrayBuf = await response.arrayBuffer();
+    res.send(Buffer.from(arrayBuf));
+  } catch (err: any) {
+    if (API_FALLBACK) {
       try {
-        let { response, targetUrl } = await doFetch(API_TARGET);
-        // Si el primario devuelve 5xx y tenemos fallback, intentar remoto
-        if (response.status >= 500 && API_FALLBACK) {
-          console.warn(`[SSR] API primario ${API_TARGET} respondió ${response.status}. Intentando fallback...`);
-          ({ response, targetUrl } = await doFetch(API_FALLBACK));
-        }
-
+        console.warn(`[SSR] API primario ${API_TARGET} falló (${err?.code || err?.message}). Intentando fallback...`);
+        const body = await ensureBody();
+        const { response } = await doFetch(API_FALLBACK, body);
         res.status(response.status);
         response.headers.forEach((value, name) => {
           const lower = name.toLowerCase();
@@ -134,40 +148,21 @@ app.use('/api', (req, res) => {
         });
         const arrayBuf = await response.arrayBuffer();
         res.send(Buffer.from(arrayBuf));
-      } catch (err: any) {
-        // Intentar un fetch de respaldo si falló por red/ECONNREFUSED
-        if (API_FALLBACK) {
-          try {
-            console.warn(`[SSR] API primario ${API_TARGET} falló (${err?.code || err?.message}). Intentando fallback...`);
-            const { response } = await doFetch(API_FALLBACK);
-            res.status(response.status);
-            response.headers.forEach((value, name) => {
-              const lower = name.toLowerCase();
-              if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
-              res.setHeader(name, value);
-            });
-            const arrayBuf = await response.arrayBuffer();
-            res.send(Buffer.from(arrayBuf));
-            return;
-          } catch (err2: any) {
-            const detail = {
-              primary: API_TARGET,
-              fallback: API_FALLBACK,
-              message: err2?.message,
-              name: err2?.name,
-              code: err2?.code ?? err2?.cause?.code,
-              cause: err2?.cause?.message ?? String(err2?.cause ?? ''),
-            };
-            console.error('API proxy error (fallback):', detail);
-          }
-        }
-        res.status(502).json({ error: 'Bad Gateway', detail: err?.message ?? 'Proxy failed' });
+        return;
+      } catch (err2: any) {
+        const detail = {
+          primary: API_TARGET,
+          fallback: API_FALLBACK,
+          message: err2?.message,
+          name: err2?.name,
+          code: err2?.code ?? err2?.cause?.code,
+          cause: err2?.cause?.message ?? String(err2?.cause ?? ''),
+        };
+        console.error('API proxy error (fallback):', detail);
       }
-    })
-    .on('error', (err) => {
-      console.error('Proxy request stream error:', err);
-      res.status(400).json({ error: 'Bad Request', detail: 'Stream error' });
-    });
+    }
+    res.status(502).json({ error: 'Bad Gateway', detail: err?.message ?? 'Proxy failed' });
+  }
 });
 /**
  * Example Express Rest API endpoints can be defined here.
