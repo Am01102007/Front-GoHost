@@ -481,6 +481,16 @@ export class AuthService {
         const isTimeout = (err?.name === 'TimeoutError');
         if (isTimeout) {
           console.warn(`[REGISTER] timeout tras 30s; continuando sin bloquear al usuario (${dur} ms)`);
+          return this.login(userData.email, userData.password).pipe(
+            tap(() => {
+              try { this.notifications.success('Registro procesado', 'Sesión iniciada'); } catch {}
+            }),
+            catchError(loginErr => {
+              let msg = 'Registro en proceso, pero no se pudo iniciar sesión automáticamente.';
+              try { this.notifications.error(msg, 'Intenta iniciar sesión manualmente'); } catch {}
+              return throwError(() => err);
+            })
+          );
         }
         console.error(`[HTTP POST] ${url} -> ${err?.status ?? 0} | ${dur} ms | ${err?.message ?? (isTimeout ? 'Timeout' : 'Unknown Error')}`);
         let errorMessage = 'Error al registrar usuario. Inténtalo de nuevo.';
