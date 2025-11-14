@@ -40,6 +40,7 @@ export const routes: Routes = [
   { path: 'reservas-anfitrion', loadComponent: () => import('./pages/booking/host-bookings/host-bookings.component').then(m => m.HostBookingsComponent), canMatch: [hostMatch], canActivate: [hostGuard] },
   // Detalle de una reserva (solo anfitrión)
   { path: 'reserva/:id', loadComponent: () => import('./pages/booking/booking-detail/booking-detail.component').then(m => m.BookingDetailComponent), canMatch: [hostMatch], canActivate: [hostGuard] },
+  { path: 'reserva/:id/mensajes', component: MyMessagesComponent, canActivate: [authGuard] },
   // Métricas por alojamiento (solo anfitrión propietario)
   { path: 'metricas/:id', loadComponent: () => import('./pages/metrics/listing-metrics/listing-metrics.component').then(m => m.ListingMetricsComponent), canMatch: [hostMatch], canActivate: [hostGuard] },
 

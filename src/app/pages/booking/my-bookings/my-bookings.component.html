@@ -20,6 +20,7 @@
           <p class="meta">Huéspedes: {{ r.huespedes }} · Total: {{ r.total | currencyUser }}</p>
           <div class="actions">
             <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
+            <a class="link" [routerLink]="['/reserva', r.id, 'mensajes']">Mensajes</a>
             <button class="btn btn-primary" (click)="pagar(r.id)" [disabled]="r.estado==='pagado' || actionLoading[r.id]" [attr.aria-busy]="actionLoading[r.id]">
               {{ actionLoading[r.id] ? 'Procesando...' : 'Pagar ahora' }}
             </button>
@@ -45,6 +46,7 @@
           <p class="meta">Huéspedes: {{ r.huespedes }} · Total: {{ r.total | currencyUser }}</p>
           <div class="actions">
             <a class="link" [routerLink]="['/alojamientos', r.listingId]">Ver detalle</a>
+            <a class="link" [routerLink]="['/reserva', r.id, 'mensajes']">Mensajes</a>
           </div>
         </div>
       </article>

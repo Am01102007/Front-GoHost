@@ -24,6 +24,7 @@
         <p>Estado: <span class="chip" [class.pending]="booking()?.estado==='pendiente'" [class.paid]="booking()?.estado==='pagado'" [class.cancelled]="booking()?.estado==='cancelado'">{{ booking()?.estado }}</span></p>
         <div class="links">
           <a [routerLink]="['/alojamientos', booking()?.listingId]" class="btn">Ver Alojamiento</a>
+          <a [routerLink]="['/reserva', booking()?.id, 'mensajes']" class="btn">Mensajes</a>
         </div>
       </div>
     </div>
