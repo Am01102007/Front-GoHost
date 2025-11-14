@@ -219,9 +219,11 @@ app.get('/env.js', (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const base = resolveApiTarget();
   const isProd = process.env['NODE_ENV'] === 'production';
-  const apiBaseUrl = isProd
-    ? `${base}/api`
-    : (process.env['ENABLE_SSR_API_PROXY'] === 'true' ? '/api' : `${base}/api`);
+  const hostHeader = String((req.headers['x-forwarded-host'] ?? req.headers['host'] ?? '') as string);
+  const isRailwayFront = /front-gohost.*railway\.app/i.test(hostHeader);
+  const apiBaseUrl = isRailwayFront
+    ? 'https://backend-gohost-production.up.railway.app/api'
+    : (isProd ? `${base}/api` : (process.env['ENABLE_SSR_API_PROXY'] === 'true' ? '/api' : `${base}/api`));
   // Proveedor de correo: por defecto 'backend' (correo lo envía el backend)
   const mailProvider = 'backend';
   const mailEnabled = isProd ? 'true' : (process.env['MAIL_ENABLED'] ?? 'false');
