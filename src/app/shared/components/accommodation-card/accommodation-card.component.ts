@@ -84,12 +84,13 @@ export class AccommodationCardComponent {
   toggleFavorite(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    
+    this.isProcessing.set(true);
     if (this.isFavorite) {
       this.listingsService.removeFavorite(this.listing.id);
     } else {
       this.listingsService.addFavorite(this.listing.id);
     }
+    setTimeout(() => this.isProcessing.set(false), 300);
   }
 
   deleteListing(event: Event): void {
@@ -100,6 +101,7 @@ export class AccommodationCardComponent {
     const confirmMessage = `¿Estás seguro de que quieres eliminar "${this.listing.titulo}"?\n\nEsta acción no se puede deshacer y el alojamiento desaparecerá de todas las listas.`;
     
     if (confirm(confirmMessage)) {
+      this.isProcessing.set(true);
       this.listingsService.remove(this.listing.id).subscribe({
         next: () => {
           this.notifications.success(
@@ -110,7 +112,8 @@ export class AccommodationCardComponent {
         error: (err) => {
           console.error('Error deleting listing:', err);
           this.notifications.httpError(err);
-        }
+        },
+        complete: () => this.isProcessing.set(false)
       });
     }
   }

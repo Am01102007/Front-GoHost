@@ -66,6 +66,7 @@
         class="btn btn-primary" 
         (click)="buscar()"
         [disabled]="loading()"
+        [attr.aria-busy]="loading()"
       >
         <span *ngIf="!loading()">🔍 Buscar</span>
         <span *ngIf="loading()">⏳ Buscando...</span>
@@ -84,6 +85,7 @@
         class="btn btn-outline" 
         (click)="refreshData()"
         [disabled]="loading()"
+        [attr.aria-busy]="loading()"
         title="Actualizar datos"
       >
         🔄 Actualizar

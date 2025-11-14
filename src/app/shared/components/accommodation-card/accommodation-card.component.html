@@ -18,6 +18,8 @@
         class="favorite-btn" 
         [class.is-favorite]="isFavorite"
         (click)="toggleFavorite($event)"
+        [disabled]="loading()"
+        [attr.aria-busy]="loading()"
         [title]="isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'"
         type="button">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -35,7 +37,7 @@
         <button class="action-btn stats" title="Estadísticas" [routerLink]="['/metricas', listing.id]" type="button">
           <img src="/icons/stats.svg" alt="Estadísticas" width="16" height="16">
         </button>
-        <button class="action-btn delete" title="Eliminar alojamiento" (click)="deleteListing($event)" type="button">
+        <button class="action-btn delete" title="Eliminar alojamiento" (click)="deleteListing($event)" type="button" [disabled]="loading()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18"/>
             <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
