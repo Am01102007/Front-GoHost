@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MessagesService, MessageView } from '../../../core/services/messages.service';
+import { NotificationsService } from '../../../core/services/notifications.service';
 
 @Component({
   selector: 'app-my-messages',
@@ -11,24 +13,31 @@ import { CommonModule } from '@angular/common';
 export class MyMessagesComponent {
   loading = true;
   sending = false;
-  items: Array<{ id: string; from: string; text: string; date: Date }>=[];
+  items: MessageView[]=[];
+  private messages = inject(MessagesService);
+  private notifications = inject(NotificationsService);
 
   ngOnInit() {
-    setTimeout(() => {
-      this.items = [
-        { id: '1', from: 'Sistema', text: 'Bienvenido a tus mensajes', date: new Date() },
-        { id: '2', from: 'Soporte', text: '¿Necesitas ayuda? Escríbenos.', date: new Date() }
-      ];
-      this.loading = false;
-    }, 600);
+    this.messages.listMine(0, 20).subscribe({
+      next: (items) => { this.items = items; this.loading = false; },
+      error: () => { this.loading = false; }
+    });
   }
 
   send(msg: string) {
-    if (!msg.trim()) return;
+    const text = msg.trim();
+    if (!text) return;
     this.sending = true;
-    setTimeout(() => {
-      this.items.unshift({ id: Math.random().toString(36).slice(2), from: 'Yo', text: msg.trim(), date: new Date() });
-      this.sending = false;
-    }, 400);
+    this.messages.sendText(text).subscribe({
+      next: (m) => {
+        this.items.unshift(m);
+        this.notifications.success('Mensaje enviado', 'Tu mensaje fue enviado correctamente');
+        this.sending = false;
+      },
+      error: (err) => {
+        this.notifications.httpError(err);
+        this.sending = false;
+      }
+    });
   }
 }
