@@ -399,6 +399,8 @@ export class AuthService {
     const url = `${this.API_URL}/auth/register`;
     const t0 = (typeof performance !== 'undefined' && typeof performance.now === 'function') ? performance.now() : Date.now();
     let lastStatus = 0;
+    let slowTimer: any;
+    try { slowTimer = setTimeout(() => console.warn('[REGISTER] La solicitud tarda más de 15s; el correo se enviará en segundo plano.'), 15000); } catch {}
     const normalizeDate = (d?: string): string | undefined => {
       if (!d) return undefined;
       const s = String(d).trim();
@@ -497,6 +499,7 @@ export class AuthService {
       }),
       finalize(() => {
         this.loading.set(false);
+        try { if (slowTimer) clearTimeout(slowTimer); } catch {}
       })
     );
   }
